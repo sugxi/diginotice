@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { sampleTasks, sampleNotices } from '@/lib/sampleData';
 import { analyzeNotice, getPriorityLabel, getPriorityColor } from '@/lib/nlp';
+import type { Priority } from '@/lib/nlp';
 import { CheckCircle, Clock, PlayCircle, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Task } from '@/lib/sampleData';
@@ -11,14 +12,18 @@ const Tasks = () => {
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [newDue, setNewDue] = useState('');
+  const [newPriority, setNewPriority] = useState<'urgent' | 'important' | 'normal' | 'low'>('normal');
   const [filter, setFilter] = useState<'all' | 'pending' | 'in-progress' | 'completed'>('all');
   const { toast } = useToast();
 
   const enrichedTasks = useMemo(() => {
     return tasks.map(t => {
+      if (t.manualPriority) {
+        return { ...t, priority: t.manualPriority };
+      }
       const notice = sampleNotices.find(n => n.id === t.noticeId);
       const nlp = notice ? analyzeNotice(notice.title + ' ' + notice.content) : null;
-      return { ...t, nlp };
+      return { ...t, priority: (nlp?.priority ?? 'normal') as Priority };
     });
   }, [tasks]);
 
@@ -27,9 +32,7 @@ const Tasks = () => {
   // Sort by linked notice priority
   const sorted = [...filtered].sort((a, b) => {
     const order = { urgent: 0, important: 1, normal: 2, low: 3 };
-    const pa = a.nlp?.priority ?? 'normal';
-    const pb = b.nlp?.priority ?? 'normal';
-    return order[pa] - order[pb];
+    return order[a.priority] - order[b.priority];
   });
 
   const addTask = (e: React.FormEvent) => {
@@ -41,11 +44,13 @@ const Tasks = () => {
       description: newDesc,
       dueDate: newDue || '2026-04-15',
       status: 'pending',
+      manualPriority: newPriority,
     };
     setTasks(prev => [...prev, task]);
     setNewTitle('');
     setNewDesc('');
     setNewDue('');
+    setNewPriority('normal');
     setShowAdd(false);
     toast({ title: 'Task Added', description: task.title });
   };
@@ -80,6 +85,28 @@ const Tasks = () => {
             <input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Task title" required className="w-full px-4 py-2 rounded-xl bg-secondary text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary" />
             <input value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="Description" className="w-full px-4 py-2 rounded-xl bg-secondary text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary" />
             <input type="date" value={newDue} onChange={e => setNewDue(e.target.value)} className="w-full px-4 py-2 rounded-xl bg-secondary text-foreground outline-none focus:ring-2 focus:ring-primary" />
+            <div>
+              <label className="text-sm text-muted-foreground mb-2 block">Priority Level</label>
+              <div className="flex gap-2">
+                {(['urgent', 'important', 'normal', 'low'] as const).map(p => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setNewPriority(p)}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium capitalize transition-all ${
+                      newPriority === p
+                        ? p === 'urgent' ? 'bg-urgent text-urgent-foreground'
+                          : p === 'important' ? 'bg-important text-important-foreground'
+                          : p === 'normal' ? 'bg-normal text-normal-foreground'
+                          : 'bg-low text-low-foreground'
+                        : 'glass text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {getPriorityLabel(p)}
+                  </button>
+                ))}
+              </div>
+            </div>
             <button type="submit" className="gradient-primary text-primary-foreground px-6 py-2 rounded-xl font-medium hover:scale-105 transition-all">Create Task</button>
           </form>
         )}
@@ -102,7 +129,7 @@ const Tasks = () => {
         {/* Task list */}
         <div className="space-y-4">
           {sorted.map(task => (
-            <div key={task.id} className={`glass-card flex items-center gap-4 ${task.nlp ? getPriorityColor(task.nlp.priority) : ''}`}>
+            <div key={task.id} className={`glass-card flex items-center gap-4 ${getPriorityColor(task.priority)}`}>
               <button onClick={() => cycleStatus(task.id)} className="shrink-0 hover:scale-110 transition-transform">
                 {statusIcons[task.status]}
               </button>
@@ -111,7 +138,7 @@ const Tasks = () => {
                 <p className="text-xs text-muted-foreground mt-1">{task.description}</p>
                 <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                   <span>Due: {task.dueDate}</span>
-                  {task.nlp && <span className="bg-secondary px-2 py-0.5 rounded-md">{getPriorityLabel(task.nlp.priority)}</span>}
+                  <span className="bg-secondary px-2 py-0.5 rounded-md">{getPriorityLabel(task.priority)}</span>
                 </div>
               </div>
               <span className={`text-xs px-3 py-1 rounded-lg capitalize shrink-0 ${
