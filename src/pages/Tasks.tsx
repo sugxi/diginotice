@@ -50,6 +50,7 @@ const Tasks = () => {
     setNewTitle('');
     setNewDesc('');
     setNewDue('');
+    setNewPriority('normal');
     setShowAdd(false);
     toast({ title: 'Task Added', description: task.title });
   };
