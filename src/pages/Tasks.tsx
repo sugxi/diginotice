@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { sampleTasks, sampleNotices } from '@/lib/sampleData';
 import { analyzeNotice, getPriorityLabel, getPriorityColor } from '@/lib/nlp';
+import type { Priority } from '@/lib/nlp';
 import { CheckCircle, Clock, PlayCircle, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Task } from '@/lib/sampleData';

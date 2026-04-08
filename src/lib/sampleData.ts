@@ -14,6 +14,7 @@ export interface Task {
   dueDate: string;
   status: 'pending' | 'in-progress' | 'completed';
   noticeId?: string;
+  manualPriority?: 'urgent' | 'important' | 'normal' | 'low';
 }
 
 export const sampleNotices: Notice[] = [
