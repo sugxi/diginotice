@@ -11,6 +11,7 @@ const Tasks = () => {
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [newDue, setNewDue] = useState('');
+  const [newPriority, setNewPriority] = useState<'urgent' | 'important' | 'normal' | 'low'>('normal');
   const [filter, setFilter] = useState<'all' | 'pending' | 'in-progress' | 'completed'>('all');
   const { toast } = useToast();
 
