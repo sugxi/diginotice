@@ -84,6 +84,28 @@ const Tasks = () => {
             <input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Task title" required className="w-full px-4 py-2 rounded-xl bg-secondary text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary" />
             <input value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="Description" className="w-full px-4 py-2 rounded-xl bg-secondary text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary" />
             <input type="date" value={newDue} onChange={e => setNewDue(e.target.value)} className="w-full px-4 py-2 rounded-xl bg-secondary text-foreground outline-none focus:ring-2 focus:ring-primary" />
+            <div>
+              <label className="text-sm text-muted-foreground mb-2 block">Priority Level</label>
+              <div className="flex gap-2">
+                {(['urgent', 'important', 'normal', 'low'] as const).map(p => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setNewPriority(p)}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium capitalize transition-all ${
+                      newPriority === p
+                        ? p === 'urgent' ? 'bg-urgent text-urgent-foreground'
+                          : p === 'important' ? 'bg-important text-important-foreground'
+                          : p === 'normal' ? 'bg-normal text-normal-foreground'
+                          : 'bg-low text-low-foreground'
+                        : 'glass text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {getPriorityLabel(p)}
+                  </button>
+                ))}
+              </div>
+            </div>
             <button type="submit" className="gradient-primary text-primary-foreground px-6 py-2 rounded-xl font-medium hover:scale-105 transition-all">Create Task</button>
           </form>
         )}
@@ -106,7 +128,7 @@ const Tasks = () => {
         {/* Task list */}
         <div className="space-y-4">
           {sorted.map(task => (
-            <div key={task.id} className={`glass-card flex items-center gap-4 ${task.nlp ? getPriorityColor(task.nlp.priority) : ''}`}>
+            <div key={task.id} className={`glass-card flex items-center gap-4 ${getPriorityColor(task.priority)}`}>
               <button onClick={() => cycleStatus(task.id)} className="shrink-0 hover:scale-110 transition-transform">
                 {statusIcons[task.status]}
               </button>
@@ -115,7 +137,7 @@ const Tasks = () => {
                 <p className="text-xs text-muted-foreground mt-1">{task.description}</p>
                 <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                   <span>Due: {task.dueDate}</span>
-                  {task.nlp && <span className="bg-secondary px-2 py-0.5 rounded-md">{getPriorityLabel(task.nlp.priority)}</span>}
+                  <span className="bg-secondary px-2 py-0.5 rounded-md">{getPriorityLabel(task.priority)}</span>
                 </div>
               </div>
               <span className={`text-xs px-3 py-1 rounded-lg capitalize shrink-0 ${
