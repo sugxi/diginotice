@@ -18,9 +18,12 @@ const Tasks = () => {
 
   const enrichedTasks = useMemo(() => {
     return tasks.map(t => {
+      if (t.manualPriority) {
+        return { ...t, priority: t.manualPriority };
+      }
       const notice = sampleNotices.find(n => n.id === t.noticeId);
       const nlp = notice ? analyzeNotice(notice.title + ' ' + notice.content) : null;
-      return { ...t, nlp };
+      return { ...t, priority: (nlp?.priority ?? 'normal') as Priority };
     });
   }, [tasks]);
 
