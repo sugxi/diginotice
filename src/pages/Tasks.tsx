@@ -32,9 +32,7 @@ const Tasks = () => {
   // Sort by linked notice priority
   const sorted = [...filtered].sort((a, b) => {
     const order = { urgent: 0, important: 1, normal: 2, low: 3 };
-    const pa = a.nlp?.priority ?? 'normal';
-    const pb = b.nlp?.priority ?? 'normal';
-    return order[pa] - order[pb];
+    return order[a.priority] - order[b.priority];
   });
 
   const addTask = (e: React.FormEvent) => {
@@ -46,6 +44,7 @@ const Tasks = () => {
       description: newDesc,
       dueDate: newDue || '2026-04-15',
       status: 'pending',
+      manualPriority: newPriority,
     };
     setTasks(prev => [...prev, task]);
     setNewTitle('');
