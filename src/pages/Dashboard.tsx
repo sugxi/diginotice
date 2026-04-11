@@ -1,12 +1,21 @@
 import { useMemo } from 'react';
-import { sampleNotices, sampleTasks } from '@/lib/sampleData';
+import { sampleTasks } from '@/lib/sampleData';
 import { analyzeNotice, Priority, getPriorityLabel } from '@/lib/nlp';
 import { Bell, ListTodo, AlertTriangle, CheckCircle, Clock, TrendingUp } from 'lucide-react';
+import { useAuth } from '@/lib/authContext';
+import { useNoticeStore, isNoticeVisibleToUser } from '@/lib/noticeStore';
 
 const Dashboard = () => {
+  const { user } = useAuth();
+  const { notices } = useNoticeStore();
+
+  const visibleNotices = useMemo(() => {
+    return notices.filter(n => isNoticeVisibleToUser(n, user?.role, user?.year, user?.section));
+  }, [notices, user]);
+
   const stats = useMemo(() => {
     const priorityCounts: Record<Priority, number> = { urgent: 0, important: 0, normal: 0, low: 0 };
-    sampleNotices.forEach(n => {
+    visibleNotices.forEach(n => {
       const { priority } = analyzeNotice(n.title + ' ' + n.content);
       priorityCounts[priority]++;
     });
@@ -16,11 +25,11 @@ const Dashboard = () => {
       inProgress: sampleTasks.filter(t => t.status === 'in-progress').length,
       completed: sampleTasks.filter(t => t.status === 'completed').length,
     };
-    return { priorityCounts, taskStats };
-  }, []);
+    return { priorityCounts, taskStats, totalNotices: visibleNotices.length };
+  }, [visibleNotices]);
 
   const statCards = [
-    { icon: Bell, label: 'Total Notices', value: sampleNotices.length, color: 'from-primary to-accent' },
+    { icon: Bell, label: 'Total Notices', value: stats.totalNotices, color: 'from-primary to-accent' },
     { icon: AlertTriangle, label: 'Urgent', value: stats.priorityCounts.urgent, color: 'from-urgent to-important' },
     { icon: ListTodo, label: 'Total Tasks', value: stats.taskStats.total, color: 'from-normal to-primary' },
     { icon: CheckCircle, label: 'Completed', value: stats.taskStats.completed, color: 'from-low to-normal' },
@@ -53,7 +62,7 @@ const Dashboard = () => {
             <div className="space-y-4">
               {(['urgent', 'important', 'normal', 'low'] as Priority[]).map(p => {
                 const count = stats.priorityCounts[p];
-                const pct = sampleNotices.length ? (count / sampleNotices.length) * 100 : 0;
+                const pct = stats.totalNotices ? (count / stats.totalNotices) * 100 : 0;
                 return (
                   <div key={p}>
                     <div className="flex justify-between text-sm mb-1">

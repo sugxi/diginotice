@@ -1,19 +1,28 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Bell, Brain, Cloud, Sparkles } from 'lucide-react';
 import NoticeCard from '@/components/NoticeCard';
-import { sampleNotices } from '@/lib/sampleData';
 import { analyzeNotice } from '@/lib/nlp';
+import { useAuth } from '@/lib/authContext';
+import { useNoticeStore, isNoticeVisibleToUser } from '@/lib/noticeStore';
 
 const Home = () => {
   const [selectedNotice, setSelectedNotice] = useState<string | null>(null);
+  const { user } = useAuth();
+  const { notices } = useNoticeStore();
 
-  const sortedNotices = [...sampleNotices].sort((a, b) => {
-    const pa = analyzeNotice(a.title + ' ' + a.content).priority;
-    const pb = analyzeNotice(b.title + ' ' + b.content).priority;
-    const order = { urgent: 0, important: 1, normal: 2, low: 3 };
-    return order[pa] - order[pb];
-  });
+  const visibleNotices = useMemo(() => {
+    return notices.filter(n => isNoticeVisibleToUser(n, user?.role, user?.year, user?.section));
+  }, [notices, user]);
+
+  const sortedNotices = useMemo(() => {
+    return [...visibleNotices].sort((a, b) => {
+      const pa = analyzeNotice(a.title + ' ' + a.content).priority;
+      const pb = analyzeNotice(b.title + ' ' + b.content).priority;
+      const order = { urgent: 0, important: 1, normal: 2, low: 3 };
+      return order[pa] - order[pb];
+    });
+  }, [visibleNotices]);
 
   return (
     <div className="min-h-screen gradient-bg">
@@ -82,28 +91,25 @@ const Home = () => {
       </section>
 
       {/* Notice detail modal */}
-      {selectedNotice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-foreground/20 backdrop-blur-sm" onClick={() => setSelectedNotice(null)}>
-          <div className="glass-strong max-w-lg w-full p-8" onClick={e => e.stopPropagation()}>
-            {(() => {
-              const n = sampleNotices.find(n => n.id === selectedNotice)!;
-              const nlp = analyzeNotice(n.title + ' ' + n.content);
-              return (
-                <>
-                  <h2 className="font-display text-2xl font-bold text-foreground mb-4">{n.title}</h2>
-                  <p className="text-muted-foreground mb-4">{nlp.cleanedText}</p>
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {nlp.keywords.map(k => (
-                      <span key={k} className="text-xs bg-secondary text-secondary-foreground px-2 py-1 rounded-lg">{k}</span>
-                    ))}
-                  </div>
-                  <p className="text-xs text-muted-foreground">By {n.author} · {n.date} · {n.category}</p>
-                </>
-              );
-            })()}
+      {selectedNotice && (() => {
+        const n = visibleNotices.find(n => n.id === selectedNotice);
+        if (!n) return null;
+        const nlp = analyzeNotice(n.title + ' ' + n.content);
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-foreground/20 backdrop-blur-sm" onClick={() => setSelectedNotice(null)}>
+            <div className="glass-strong max-w-lg w-full p-8" onClick={e => e.stopPropagation()}>
+              <h2 className="font-display text-2xl font-bold text-foreground mb-4">{n.title}</h2>
+              <p className="text-muted-foreground mb-4">{nlp.cleanedText}</p>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {nlp.keywords.map(k => (
+                  <span key={k} className="text-xs bg-secondary text-secondary-foreground px-2 py-1 rounded-lg">{k}</span>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">By {n.author} · {n.date} · {n.category}</p>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 };

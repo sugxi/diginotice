@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Bell, LayoutDashboard, Home, Info, LogIn, ListTodo, Menu, X } from 'lucide-react';
+import { Bell, LayoutDashboard, Home, Info, LogIn, ListTodo, Menu, X, LogOut, User } from 'lucide-react';
+import { useAuth } from '@/lib/authContext';
 
 const navItems = [
   { to: '/', label: 'Home', icon: Home },
@@ -8,12 +9,12 @@ const navItems = [
   { to: '/notifications', label: 'Notifications', icon: Bell },
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/tasks', label: 'Tasks', icon: ListTodo },
-  { to: '/login', label: 'Login', icon: LogIn },
 ];
 
 const Navbar = () => {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user, logout } = useAuth();
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass-strong">
@@ -45,6 +46,22 @@ const Navbar = () => {
                 </Link>
               );
             })}
+            {user ? (
+              <div className="flex items-center gap-2 ml-2">
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <User className="w-3 h-3" />
+                  {user.name}
+                  <span className="bg-secondary px-1.5 py-0.5 rounded capitalize">{user.role}</span>
+                </span>
+                <button onClick={logout} className="flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-all">
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <Link to="/login" className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${location.pathname === '/login' ? 'bg-primary text-primary-foreground shadow-lg' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'}`}>
+                <LogIn className="w-4 h-4" /> Login
+              </Link>
+            )}
           </div>
 
           {/* Mobile toggle */}
@@ -79,6 +96,20 @@ const Navbar = () => {
                 </Link>
               );
             })}
+            {user ? (
+              <>
+                <div className="px-4 py-2 text-xs text-muted-foreground">
+                  Signed in as <span className="font-medium text-foreground">{user.name}</span> ({user.role})
+                </div>
+                <button onClick={() => { logout(); setMobileOpen(false); }} className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary w-full">
+                  <LogOut className="w-4 h-4" /> Sign Out
+                </button>
+              </>
+            ) : (
+              <Link to="/login" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary">
+                <LogIn className="w-4 h-4" /> Login
+              </Link>
+            )}
           </div>
         </div>
       )}
