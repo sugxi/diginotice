@@ -1,10 +1,15 @@
 import { useState, useMemo } from 'react';
-import { sampleTasks, sampleNotices } from '@/lib/sampleData';
+import { sampleTasks } from '@/lib/sampleData';
 import { analyzeNotice, getPriorityLabel, getPriorityColor } from '@/lib/nlp';
 import type { Priority } from '@/lib/nlp';
 import { CheckCircle, Clock, PlayCircle, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Task } from '@/lib/sampleData';
+import { useAuth } from '@/lib/authContext';
+import { useNoticeStore } from '@/lib/noticeStore';
+
+const YEARS = [1, 2, 3, 4];
+const SECTIONS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
 const Tasks = () => {
   const [tasks, setTasks] = useState<Task[]>(sampleTasks);
@@ -14,22 +19,29 @@ const Tasks = () => {
   const [newDue, setNewDue] = useState('');
   const [newPriority, setNewPriority] = useState<'urgent' | 'important' | 'normal' | 'low'>('normal');
   const [filter, setFilter] = useState<'all' | 'pending' | 'in-progress' | 'completed'>('all');
+  const [visType, setVisType] = useState<'general' | 'faculty' | 'targeted'>('general');
+  const [visYears, setVisYears] = useState<number[]>([]);
+  const [visSections, setVisSections] = useState<string[]>([]);
   const { toast } = useToast();
+  const { user, isAdminOrTeacher } = useAuth();
+  const { notices } = useNoticeStore();
+
+  const toggleYear = (y: number) => setVisYears(prev => prev.includes(y) ? prev.filter(v => v !== y) : [...prev, y]);
+  const toggleSection = (s: string) => setVisSections(prev => prev.includes(s) ? prev.filter(v => v !== s) : [...prev, s]);
 
   const enrichedTasks = useMemo(() => {
     return tasks.map(t => {
       if (t.manualPriority) {
         return { ...t, priority: t.manualPriority };
       }
-      const notice = sampleNotices.find(n => n.id === t.noticeId);
+      const notice = notices.find(n => n.id === t.noticeId);
       const nlp = notice ? analyzeNotice(notice.title + ' ' + notice.content) : null;
       return { ...t, priority: (nlp?.priority ?? 'normal') as Priority };
     });
-  }, [tasks]);
+  }, [tasks, notices]);
 
   const filtered = filter === 'all' ? enrichedTasks : enrichedTasks.filter(t => t.status === filter);
 
-  // Sort by linked notice priority
   const sorted = [...filtered].sort((a, b) => {
     const order = { urgent: 0, important: 1, normal: 2, low: 3 };
     return order[a.priority] - order[b.priority];
@@ -47,10 +59,8 @@ const Tasks = () => {
       manualPriority: newPriority,
     };
     setTasks(prev => [...prev, task]);
-    setNewTitle('');
-    setNewDesc('');
-    setNewDue('');
-    setNewPriority('normal');
+    setNewTitle(''); setNewDesc(''); setNewDue(''); setNewPriority('normal');
+    setVisType('general'); setVisYears([]); setVisSections([]);
     setShowAdd(false);
     toast({ title: 'Task Added', description: task.title });
   };
@@ -107,6 +117,43 @@ const Tasks = () => {
                 ))}
               </div>
             </div>
+
+            {/* Visibility selector */}
+            <div>
+              <label className="text-sm text-muted-foreground mb-2 block">Who can view this task?</label>
+              <div className="flex gap-2 mb-3">
+                {([['general', 'Everyone'], ['faculty', 'Faculty Only'], ['targeted', 'Specific Year/Section']] as const).map(([val, label]) => (
+                  <button key={val} type="button" onClick={() => setVisType(val)} className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${visType === val ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground hover:bg-muted'}`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {visType === 'targeted' && (
+                <div className="space-y-3 p-4 rounded-xl bg-secondary/50">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-2">Select Years (leave empty for all)</p>
+                    <div className="flex gap-2">
+                      {YEARS.map(y => (
+                        <button key={y} type="button" onClick={() => toggleYear(y)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${visYears.includes(y) ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground hover:bg-muted'}`}>
+                          Year {y}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-2">Select Sections (leave empty for all)</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {SECTIONS.map(s => (
+                        <button key={s} type="button" onClick={() => toggleSection(s)} className={`w-8 h-8 rounded-lg text-xs font-medium transition-all ${visSections.includes(s) ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground hover:bg-muted'}`}>
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <button type="submit" className="gradient-primary text-primary-foreground px-6 py-2 rounded-xl font-medium hover:scale-105 transition-all">Create Task</button>
           </form>
         )}
