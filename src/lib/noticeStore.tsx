@@ -16,7 +16,7 @@ export interface ManagedNotice extends Notice {
 const initialNotices: ManagedNotice[] = sampleNotices.map(n => ({
   ...n,
   visibility: { type: 'general' },
-  expiryDate: n.date >= '2026-04-08' ? '2026-04-30' : n.date,
+  expiryDate: '2026-04-30',
 }));
 
 interface NoticeStoreContextType {

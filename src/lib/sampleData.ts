@@ -12,7 +12,7 @@ export interface Task {
   title: string;
   description: string;
   dueDate: string;
-  status: 'pending' | 'in-progress' | 'completed';
+  status: 'pending' | 'in-progress' | 'completed' | 'missed';
   noticeId?: string;
   manualPriority?: 'urgent' | 'important' | 'normal' | 'low';
 }
