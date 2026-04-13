@@ -90,7 +90,7 @@ const Notifications = () => {
     <div className="min-h-screen gradient-bg pt-24 pb-16 px-4">
       <div className="max-w-5xl mx-auto">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="font-display text-4xl font-bold text-foreground">Notifications</h1>
+          <h1 className="font-display text-4xl font-bold text-foreground">Notices</h1>
           {isAdminOrTeacher && (
             <button onClick={() => setShowAdd(!showAdd)} className="gradient-primary text-primary-foreground px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 hover:scale-105 transition-all">
               <Plus className="w-4 h-4" /> Add Notice

@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { sampleTasks } from '@/lib/sampleData';
 import { analyzeNotice, getPriorityLabel, getPriorityColor } from '@/lib/nlp';
 import type { Priority } from '@/lib/nlp';
-import { CheckCircle, Clock, PlayCircle, Plus } from 'lucide-react';
+import { CheckCircle, Clock, PlayCircle, Plus, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Task } from '@/lib/sampleData';
 import { useAuth } from '@/lib/authContext';
@@ -18,7 +18,7 @@ const Tasks = () => {
   const [newDesc, setNewDesc] = useState('');
   const [newDue, setNewDue] = useState('');
   const [newPriority, setNewPriority] = useState<'urgent' | 'important' | 'normal' | 'low'>('normal');
-  const [filter, setFilter] = useState<'all' | 'pending' | 'in-progress' | 'completed'>('all');
+  const [filter, setFilter] = useState<'all' | 'pending' | 'in-progress' | 'completed' | 'missed'>('all');
   const [visType, setVisType] = useState<'general' | 'faculty' | 'targeted'>('general');
   const [visYears, setVisYears] = useState<number[]>([]);
   const [visSections, setVisSections] = useState<string[]>([]);
@@ -65,10 +65,14 @@ const Tasks = () => {
     toast({ title: 'Task Added', description: task.title });
   };
 
+  const setTaskStatus = (id: string, status: Task['status']) => {
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, status } : t));
+  };
+
   const cycleStatus = (id: string) => {
     setTasks(prev => prev.map(t => {
       if (t.id !== id) return t;
-      const next = t.status === 'pending' ? 'in-progress' : t.status === 'in-progress' ? 'completed' : 'pending';
+      const next = t.status === 'pending' ? 'in-progress' : t.status === 'in-progress' ? 'completed' : t.status === 'completed' ? 'missed' : 'pending';
       return { ...t, status: next };
     }));
   };
@@ -77,6 +81,7 @@ const Tasks = () => {
     pending: <Clock className="w-4 h-4 text-urgent" />,
     'in-progress': <PlayCircle className="w-4 h-4 text-important" />,
     completed: <CheckCircle className="w-4 h-4 text-low" />,
+    missed: <XCircle className="w-4 h-4 text-destructive" />,
   };
 
   return (
@@ -160,7 +165,7 @@ const Tasks = () => {
 
         {/* Filters */}
         <div className="flex gap-2 mb-6">
-          {(['all', 'pending', 'in-progress', 'completed'] as const).map(f => (
+          {(['all', 'pending', 'in-progress', 'completed', 'missed'] as const).map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
@@ -177,20 +182,42 @@ const Tasks = () => {
         <div className="space-y-4">
           {sorted.map(task => (
             <div key={task.id} className={`glass-card flex items-center gap-4 ${getPriorityColor(task.priority)}`}>
-              <button onClick={() => cycleStatus(task.id)} className="shrink-0 hover:scale-110 transition-transform">
+              <button onClick={() => cycleStatus(task.id)} className="shrink-0 hover:scale-110 transition-transform" title="Click to cycle status">
                 {statusIcons[task.status]}
               </button>
               <div className="flex-1 min-w-0">
-                <p className={`font-medium text-foreground ${task.status === 'completed' ? 'line-through opacity-60' : ''}`}>{task.title}</p>
+                <p className={`font-medium text-foreground ${task.status === 'completed' ? 'line-through opacity-60' : ''} ${task.status === 'missed' ? 'line-through opacity-40 text-destructive' : ''}`}>{task.title}</p>
                 <p className="text-xs text-muted-foreground mt-1">{task.description}</p>
                 <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                   <span>Due: {task.dueDate}</span>
                   <span className="bg-secondary px-2 py-0.5 rounded-md">{getPriorityLabel(task.priority)}</span>
                 </div>
+                {/* Status selector for students */}
+                {user && (
+                  <div className="flex gap-1.5 mt-2">
+                    {(['pending', 'in-progress', 'completed', 'missed'] as const).map(s => (
+                      <button
+                        key={s}
+                        onClick={() => setTaskStatus(task.id, s)}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-medium capitalize transition-all ${
+                          task.status === s
+                            ? s === 'completed' ? 'bg-low/20 text-low'
+                              : s === 'missed' ? 'bg-destructive/20 text-destructive'
+                              : s === 'in-progress' ? 'bg-important/20 text-important'
+                              : 'bg-urgent/20 text-urgent'
+                            : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
+                        }`}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               <span className={`text-xs px-3 py-1 rounded-lg capitalize shrink-0 ${
                 task.status === 'completed' ? 'bg-low/20 text-low' :
                 task.status === 'in-progress' ? 'bg-important/20 text-important' :
+                task.status === 'missed' ? 'bg-destructive/20 text-destructive' :
                 'bg-urgent/20 text-urgent'
               }`}>
                 {task.status}
