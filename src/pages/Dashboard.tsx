@@ -1,48 +1,51 @@
 import { useMemo } from 'react';
-import { sampleTasks } from '@/lib/sampleData';
-import { analyzeNotice, Priority, getPriorityLabel } from '@/lib/nlp';
-import { Bell, ListTodo, AlertTriangle, CheckCircle, Clock, TrendingUp } from 'lucide-react';
+import { Bell, ListTodo, AlertTriangle, CheckCircle, Clock, TrendingUp, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/lib/authContext';
-import { useNoticeStore, isNoticeVisibleToUser } from '@/lib/noticeStore';
+import { useNoticeStore } from '@/lib/noticeStore';
+import { useStatuses } from '@/lib/statusContext';
+import { Urgency, getUrgencyLabel } from '@/lib/urgency';
+import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, isAdminOrTeacher } = useAuth();
   const { notices } = useNoticeStore();
-
-  const visibleNotices = useMemo(() => {
-    return notices.filter(n => isNoticeVisibleToUser(n, user?.role, user?.year, user?.section));
-  }, [notices, user]);
+  const { statuses } = useStatuses();
 
   const stats = useMemo(() => {
-    const priorityCounts: Record<Priority, number> = { urgent: 0, important: 0, normal: 0, low: 0 };
-    visibleNotices.forEach(n => {
-      const { priority } = analyzeNotice(n.title + ' ' + n.content);
-      priorityCounts[priority]++;
+    const counts: Record<Urgency, number> = { urgent: 0, important: 0, normal: 0, low: 0, expired: 0 };
+    notices.forEach(n => { counts[n.urgency]++; });
+    const taskStatusCounts = { pending: 0, 'in-progress': 0, completed: 0, missed: 0 };
+    notices.forEach(n => {
+      const s = statuses[n.id] ?? (n.urgency === 'expired' ? 'missed' : 'pending');
+      taskStatusCounts[s as keyof typeof taskStatusCounts]++;
     });
-    const taskStats = {
-      total: sampleTasks.length,
-      pending: sampleTasks.filter(t => t.status === 'pending').length,
-      inProgress: sampleTasks.filter(t => t.status === 'in-progress').length,
-      completed: sampleTasks.filter(t => t.status === 'completed').length,
-    };
-    return { priorityCounts, taskStats, totalNotices: visibleNotices.length };
-  }, [visibleNotices]);
+    return { counts, taskStatusCounts, totalNotices: notices.length };
+  }, [notices, statuses]);
 
-  const statCards = [
+  const cards = [
     { icon: Bell, label: 'Total Notices', value: stats.totalNotices, color: 'from-primary to-accent' },
-    { icon: AlertTriangle, label: 'Urgent', value: stats.priorityCounts.urgent, color: 'from-urgent to-important' },
-    { icon: ListTodo, label: 'Total Tasks', value: stats.taskStats.total, color: 'from-normal to-primary' },
-    { icon: CheckCircle, label: 'Completed', value: stats.taskStats.completed, color: 'from-low to-normal' },
+    { icon: AlertTriangle, label: 'Urgent', value: stats.counts.urgent, color: 'from-urgent to-important' },
+    { icon: ListTodo, label: 'In Progress', value: stats.taskStatusCounts['in-progress'], color: 'from-normal to-primary' },
+    { icon: CheckCircle, label: 'Completed', value: stats.taskStatusCounts.completed, color: 'from-low to-normal' },
   ];
 
   return (
     <div className="min-h-screen gradient-bg pt-24 pb-16 px-4">
       <div className="max-w-6xl mx-auto">
-        <h1 className="font-display text-4xl font-bold text-foreground mb-8">Dashboard</h1>
+        <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
+          <div>
+            <h1 className="font-display text-4xl font-bold text-foreground">Dashboard</h1>
+            {user && <p className="text-sm text-muted-foreground mt-1">Welcome back, {user.name} ({user.role})</p>}
+          </div>
+          {isAdminOrTeacher && (
+            <Link to="/analytics" className="gradient-primary text-primary-foreground px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 hover:scale-105 transition-all">
+              <BarChart3 className="w-4 h-4" /> Analytics
+            </Link>
+          )}
+        </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {statCards.map((s, i) => (
+          {cards.map((s, i) => (
             <div key={i} className="glass-card text-center">
               <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center mx-auto mb-3`}>
                 <s.icon className="w-5 h-5 text-primary-foreground" />
@@ -54,28 +57,22 @@ const Dashboard = () => {
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8">
-          {/* Priority breakdown */}
           <div className="glass-strong p-6">
             <h2 className="font-display text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-primary" /> Priority Breakdown
+              <TrendingUp className="w-5 h-5 text-primary" /> Urgency Breakdown
             </h2>
             <div className="space-y-4">
-              {(['urgent', 'important', 'normal', 'low'] as Priority[]).map(p => {
-                const count = stats.priorityCounts[p];
+              {(['urgent', 'important', 'normal', 'low'] as Urgency[]).map(p => {
+                const count = stats.counts[p];
                 const pct = stats.totalNotices ? (count / stats.totalNotices) * 100 : 0;
                 return (
                   <div key={p}>
                     <div className="flex justify-between text-sm mb-1">
-                      <span className="text-foreground font-medium">{getPriorityLabel(p)}</span>
+                      <span className="text-foreground font-medium">{getUrgencyLabel(p)}</span>
                       <span className="text-muted-foreground">{count} ({Math.round(pct)}%)</span>
                     </div>
                     <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-700 ${
-                          p === 'urgent' ? 'bg-urgent' : p === 'important' ? 'bg-important' : p === 'normal' ? 'bg-normal' : 'bg-low'
-                        }`}
-                        style={{ width: `${pct}%` }}
-                      />
+                      <div className={`h-full rounded-full transition-all duration-700 ${p === 'urgent' ? 'bg-urgent' : p === 'important' ? 'bg-important' : p === 'normal' ? 'bg-normal' : 'bg-low'}`} style={{ width: `${pct}%` }} />
                     </div>
                   </div>
                 );
@@ -83,30 +80,26 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Task overview */}
           <div className="glass-strong p-6">
             <h2 className="font-display text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-primary" /> Task Overview
+              <Clock className="w-5 h-5 text-primary" /> My Task Progress
             </h2>
             <div className="space-y-3">
-              {sampleTasks.map(task => (
-                <div key={task.id} className="flex items-center gap-3 p-3 rounded-xl bg-secondary/50">
-                  <div className={`w-2 h-2 rounded-full shrink-0 ${
-                    task.status === 'completed' ? 'bg-low' : task.status === 'in-progress' ? 'bg-important' : 'bg-urgent'
-                  }`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{task.title}</p>
-                    <p className="text-xs text-muted-foreground">Due: {task.dueDate}</p>
+              {(['pending', 'in-progress', 'completed', 'missed'] as const).map(s => {
+                const count = stats.taskStatusCounts[s];
+                const pct = stats.totalNotices ? (count / stats.totalNotices) * 100 : 0;
+                return (
+                  <div key={s}>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-foreground font-medium capitalize">{s}</span>
+                      <span className="text-muted-foreground">{count}</span>
+                    </div>
+                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full ${s === 'completed' ? 'bg-low' : s === 'in-progress' ? 'bg-important' : s === 'missed' ? 'bg-destructive' : 'bg-urgent'}`} style={{ width: `${pct}%` }} />
+                    </div>
                   </div>
-                  <span className={`text-xs px-2 py-1 rounded-lg capitalize ${
-                    task.status === 'completed' ? 'bg-low/20 text-low' :
-                    task.status === 'in-progress' ? 'bg-important/20 text-important' :
-                    'bg-urgent/20 text-urgent'
-                  }`}>
-                    {task.status}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

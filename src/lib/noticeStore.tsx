@@ -1,90 +1,125 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { sampleNotices, Notice } from '@/lib/sampleData';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/lib/authContext';
+import { computeUrgency, Urgency } from '@/lib/urgency';
 
-export interface NoticeVisibility {
-  type: 'general' | 'faculty' | 'targeted';
-  years?: number[];     // e.g. [1,3]
-  sections?: string[];  // e.g. ['A','B']
+export interface ManagedNotice {
+  id: string;
+  title: string;
+  content: string;
+  category: string;
+  deadline: string;          // ISO timestamp
+  base_urgency: Urgency;
+  visibility: 'general' | 'faculty' | 'targeted';
+  target_years: number[];
+  target_sections: string[];
+  author_id: string | null;
+  author_name: string;
+  created_at: string;
+  // computed
+  urgency: Urgency;
 }
-
-export interface ManagedNotice extends Notice {
-  visibility: NoticeVisibility;
-  expiryDate: string; // YYYY-MM-DD
-}
-
-// Convert sample notices to managed notices (all general, expire in 30 days)
-const initialNotices: ManagedNotice[] = sampleNotices.map(n => ({
-  ...n,
-  visibility: { type: 'general' },
-  expiryDate: '2026-04-30',
-}));
 
 interface NoticeStoreContextType {
   notices: ManagedNotice[];
-  addNotice: (notice: ManagedNotice) => void;
-  removeNotice: (id: string) => void;
+  loading: boolean;
+  refresh: () => Promise<void>;
+  addNotice: (data: Omit<ManagedNotice, 'id' | 'created_at' | 'urgency' | 'author_id' | 'author_name'>) => Promise<{ error?: string }>;
+  updateNotice: (id: string, data: Partial<Omit<ManagedNotice, 'id' | 'urgency'>>) => Promise<{ error?: string }>;
+  removeNotice: (id: string) => Promise<{ error?: string }>;
 }
 
 const NoticeStoreContext = createContext<NoticeStoreContextType>({
-  notices: [],
-  addNotice: () => {},
-  removeNotice: () => {},
+  notices: [], loading: true,
+  refresh: async () => {},
+  addNotice: async () => ({}), updateNotice: async () => ({}), removeNotice: async () => ({}),
 });
 
 export const useNoticeStore = () => useContext(NoticeStoreContext);
 
-export const NoticeStoreProvider = ({ children }: { children: ReactNode }) => {
-  const [notices, setNotices] = useState<ManagedNotice[]>(initialNotices);
+function enrich(rows: any[]): ManagedNotice[] {
+  return (rows || []).map(r => ({
+    ...r,
+    target_years: r.target_years ?? [],
+    target_sections: r.target_sections ?? [],
+    urgency: computeUrgency(r.deadline),
+  }));
+}
 
-  // Auto-delete expired notices (check every minute)
-  const purgeExpired = useCallback(() => {
-    const now = new Date();
-    setNotices(prev => prev.filter(n => {
-      const expiry = new Date(n.expiryDate + 'T23:59:59');
-      return now <= expiry;
-    }));
+export const NoticeStoreProvider = ({ children }: { children: ReactNode }) => {
+  const { user, session } = useAuth();
+  const [notices, setNotices] = useState<ManagedNotice[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('notices')
+      .select('*')
+      .order('deadline', { ascending: true });
+    if (!error) setNotices(enrich(data ?? []));
+    setLoading(false);
   }, []);
 
   useEffect(() => {
-    purgeExpired();
-    const interval = setInterval(purgeExpired, 60_000);
-    return () => clearInterval(interval);
-  }, [purgeExpired]);
+    refresh();
+  }, [refresh, session?.user?.id]);
 
-  const addNotice = (notice: ManagedNotice) => {
-    setNotices(prev => [notice, ...prev]);
+  // Realtime
+  useEffect(() => {
+    const channel = supabase
+      .channel('notices-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notices' }, () => refresh())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [refresh]);
+
+  // Re-compute urgency every minute (so it updates dynamically)
+  useEffect(() => {
+    const i = setInterval(() => {
+      setNotices(prev => prev.map(n => ({ ...n, urgency: computeUrgency(n.deadline) })));
+    }, 60_000);
+    return () => clearInterval(i);
+  }, []);
+
+  // Trigger expired-notice cleanup on mount + every 5 minutes
+  useEffect(() => {
+    const purge = async () => {
+      try { await supabase.functions.invoke('cleanup-and-notify'); refresh(); } catch {}
+    };
+    purge();
+    const i = setInterval(purge, 5 * 60_000);
+    return () => clearInterval(i);
+  }, [refresh]);
+
+  const addNotice: NoticeStoreContextType['addNotice'] = async (data) => {
+    if (!user) return { error: 'Not signed in' };
+    const { error } = await supabase.from('notices').insert({
+      ...data,
+      author_id: user.id,
+      author_name: user.name,
+    });
+    if (error) return { error: error.message };
+    refresh();
+    return {};
   };
 
-  const removeNotice = (id: string) => {
-    setNotices(prev => prev.filter(n => n.id !== id));
+  const updateNotice: NoticeStoreContextType['updateNotice'] = async (id, data) => {
+    const { error } = await supabase.from('notices').update({ ...data, updated_at: new Date().toISOString() }).eq('id', id);
+    if (error) return { error: error.message };
+    refresh();
+    return {};
+  };
+
+  const removeNotice: NoticeStoreContextType['removeNotice'] = async (id) => {
+    const { error } = await supabase.from('notices').delete().eq('id', id);
+    if (error) return { error: error.message };
+    refresh();
+    return {};
   };
 
   return (
-    <NoticeStoreContext.Provider value={{ notices, addNotice, removeNotice }}>
+    <NoticeStoreContext.Provider value={{ notices, loading, refresh, addNotice, updateNotice, removeNotice }}>
       {children}
     </NoticeStoreContext.Provider>
   );
 };
-
-/** Check if a notice is visible to a given user */
-export function isNoticeVisibleToUser(
-  notice: ManagedNotice,
-  userRole?: string,
-  userYear?: number,
-  userSection?: string,
-): boolean {
-  const v = notice.visibility;
-  // Admin and teachers see everything
-  if (userRole === 'admin' || userRole === 'teacher') return true;
-  // General notices visible to all
-  if (v.type === 'general') return true;
-  // Faculty-only notices hidden from students
-  if (v.type === 'faculty') return false;
-  // Targeted notices: check year & section
-  if (v.type === 'targeted') {
-    const yearMatch = !v.years || v.years.length === 0 || (userYear !== undefined && v.years.includes(userYear));
-    const sectionMatch = !v.sections || v.sections.length === 0 || (userSection !== undefined && v.sections.includes(userSection));
-    return yearMatch && sectionMatch;
-  }
-  return true;
-}
