@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Eye, EyeOff, LogIn, UserPlus, LogOut } from 'lucide-react';
+import { Eye, EyeOff, LogIn, UserPlus, LogOut, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, demoAccounts, UserProfile } from '@/lib/authContext';
+import { useAuth, UserRole } from '@/lib/authContext';
 import { useNavigate } from 'react-router-dom';
 
 const YEARS = [1, 2, 3, 4];
@@ -13,14 +13,14 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState('');
-  const [role, setRole] = useState<'admin' | 'teacher' | 'student'>('student');
+  const [role, setRole] = useState<UserRole>('student');
   const [year, setYear] = useState(1);
   const [section, setSection] = useState('A');
+  const [busy, setBusy] = useState(false);
   const { toast } = useToast();
-  const { user, login, logout } = useAuth();
+  const { user, signIn, signUp, logout } = useAuth();
   const navigate = useNavigate();
 
-  // If logged in, show profile
   if (user) {
     return (
       <div className="min-h-screen gradient-bg flex items-center justify-center px-4 pt-20">
@@ -35,7 +35,7 @@ const Login = () => {
               <p className="text-sm text-muted-foreground">Year {user.year} · Section {user.section}</p>
             )}
           </div>
-          <button onClick={() => { logout(); toast({ title: 'Logged Out' }); }} className="w-full flex items-center justify-center gap-2 bg-secondary text-secondary-foreground py-3 rounded-xl font-medium hover:scale-[1.02] transition-all">
+          <button onClick={async () => { await logout(); toast({ title: 'Logged Out' }); }} className="w-full flex items-center justify-center gap-2 bg-secondary text-secondary-foreground py-3 rounded-xl font-medium hover:scale-[1.02] transition-all">
             <LogOut className="w-4 h-4" /> Sign Out
           </button>
         </div>
@@ -43,57 +43,35 @@ const Login = () => {
     );
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const profile: UserProfile = {
-      id: Date.now().toString(),
-      name: name || email.split('@')[0],
-      email,
-      role,
-      ...(role === 'student' ? { year, section } : {}),
-    };
-    login(profile);
-    toast({ title: isLogin ? 'Login Successful' : 'Account Created', description: `Welcome, ${profile.name}!` });
-    navigate('/');
-  };
-
-  const handleDemoLogin = (account: UserProfile) => {
-    login(account);
-    toast({ title: 'Demo Login', description: `Logged in as ${account.name}` });
-    navigate('/');
+    setBusy(true);
+    try {
+      if (isLogin) {
+        const { error } = await signIn(email, password);
+        if (error) { toast({ title: 'Login failed', description: error, variant: 'destructive' }); return; }
+        toast({ title: 'Login Successful' });
+        navigate('/');
+      } else {
+        const { error } = await signUp({ email, password, name: name || email.split('@')[0], role, year: role === 'student' ? year : undefined, section: role === 'student' ? section : undefined });
+        if (error) { toast({ title: 'Signup failed', description: error, variant: 'destructive' }); return; }
+        toast({ title: 'Account Created', description: 'You are now signed in.' });
+        navigate('/');
+      }
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
-    <div className="min-h-screen gradient-bg flex items-center justify-center px-4 pt-20">
+    <div className="min-h-screen gradient-bg flex items-center justify-center px-4 pt-20 pb-10">
       <div className="glass-strong max-w-md w-full p-8 animate-glow">
         <div className="text-center mb-8">
           <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4">
             {isLogin ? <LogIn className="w-8 h-8 text-primary-foreground" /> : <UserPlus className="w-8 h-8 text-primary-foreground" />}
           </div>
-          <h1 className="font-display text-3xl font-bold text-foreground">
-            {isLogin ? 'Welcome Back' : 'Create Account'}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-2">
-            {isLogin ? 'Sign in to access your notice board' : 'Join the smart notice board'}
-          </p>
-        </div>
-
-        {/* Quick Demo Logins */}
-        <div className="mb-6">
-          <p className="text-xs text-muted-foreground mb-2 text-center">Quick Demo Login</p>
-          <div className="grid grid-cols-2 gap-2">
-            {demoAccounts.map(acc => (
-              <button key={acc.id} onClick={() => handleDemoLogin(acc)} className="text-xs glass px-3 py-2 rounded-lg text-foreground hover:bg-secondary transition-all text-left">
-                <span className="font-medium block">{acc.name}</span>
-                <span className="text-muted-foreground capitalize">{acc.role}{acc.year ? ` · Y${acc.year}${acc.section}` : ''}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="relative mb-6">
-          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border"></div></div>
-          <div className="relative flex justify-center text-xs"><span className="bg-background px-2 text-muted-foreground">or continue with email</span></div>
+          <h1 className="font-display text-3xl font-bold text-foreground">{isLogin ? 'Welcome Back' : 'Create Account'}</h1>
+          <p className="text-sm text-muted-foreground mt-2">{isLogin ? 'Sign in to access your notice board' : 'Join the smart notice board'}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -138,13 +116,14 @@ const Login = () => {
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">Password</label>
             <div className="relative">
-              <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required className="w-full px-4 py-3 rounded-xl bg-secondary text-foreground placeholder:text-muted-foreground border-none outline-none focus:ring-2 focus:ring-primary transition-all pr-12" />
+              <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required minLength={6} className="w-full px-4 py-3 rounded-xl bg-secondary text-foreground placeholder:text-muted-foreground border-none outline-none focus:ring-2 focus:ring-primary transition-all pr-12" />
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
           </div>
-          <button type="submit" className="w-full gradient-primary text-primary-foreground py-3 rounded-xl font-medium shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all">
+          <button type="submit" disabled={busy} className="w-full gradient-primary text-primary-foreground py-3 rounded-xl font-medium shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all flex items-center justify-center gap-2 disabled:opacity-60">
+            {busy && <Loader2 className="w-4 h-4 animate-spin" />}
             {isLogin ? 'Sign In' : 'Create Account'}
           </button>
         </form>
