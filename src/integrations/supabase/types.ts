@@ -14,16 +14,196 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      notice_statuses: {
+        Row: {
+          id: string
+          notice_id: string
+          status: Database["public"]["Enums"]["task_status"]
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          notice_id: string
+          status?: Database["public"]["Enums"]["task_status"]
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          notice_id?: string
+          status?: Database["public"]["Enums"]["task_status"]
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notice_statuses_notice_id_fkey"
+            columns: ["notice_id"]
+            isOneToOne: false
+            referencedRelation: "notices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notices: {
+        Row: {
+          author_id: string | null
+          author_name: string
+          base_urgency: Database["public"]["Enums"]["urgency_level"]
+          category: string
+          content: string
+          created_at: string
+          deadline: string
+          id: string
+          target_sections: string[] | null
+          target_years: number[] | null
+          title: string
+          updated_at: string
+          visibility: Database["public"]["Enums"]["notice_visibility"]
+        }
+        Insert: {
+          author_id?: string | null
+          author_name: string
+          base_urgency?: Database["public"]["Enums"]["urgency_level"]
+          category?: string
+          content: string
+          created_at?: string
+          deadline: string
+          id?: string
+          target_sections?: string[] | null
+          target_years?: number[] | null
+          title: string
+          updated_at?: string
+          visibility?: Database["public"]["Enums"]["notice_visibility"]
+        }
+        Update: {
+          author_id?: string | null
+          author_name?: string
+          base_urgency?: Database["public"]["Enums"]["urgency_level"]
+          category?: string
+          content?: string
+          created_at?: string
+          deadline?: string
+          id?: string
+          target_sections?: string[] | null
+          target_years?: number[] | null
+          title?: string
+          updated_at?: string
+          visibility?: Database["public"]["Enums"]["notice_visibility"]
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          notice_id: string | null
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          notice_id?: string | null
+          read?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          notice_id?: string | null
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_notice_id_fkey"
+            columns: ["notice_id"]
+            isOneToOne: false
+            referencedRelation: "notices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          section: string | null
+          year: number | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          name: string
+          section?: string | null
+          year?: number | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          section?: string | null
+          year?: number | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      delete_expired_notices: { Args: never; Returns: number }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_staff: { Args: { _user_id: string }; Returns: boolean }
+      notice_visible_to: {
+        Args: { _notice_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "teacher" | "student"
+      notice_visibility: "general" | "faculty" | "targeted"
+      task_status: "pending" | "in-progress" | "completed" | "missed"
+      urgency_level: "low" | "normal" | "important" | "urgent" | "expired"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +330,11 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "teacher", "student"],
+      notice_visibility: ["general", "faculty", "targeted"],
+      task_status: ["pending", "in-progress", "completed", "missed"],
+      urgency_level: ["low", "normal", "important", "urgent", "expired"],
+    },
   },
 } as const
