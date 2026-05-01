@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Eye, EyeOff, LogIn, UserPlus, LogOut, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, UserRole } from '@/lib/authContext';
-import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/lib/authContext';
+import { Link, useNavigate } from 'react-router-dom';
 
 const YEARS = [1, 2, 3, 4];
 const SECTIONS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+type PublicRole = 'student' | 'teacher';
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -13,9 +14,13 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState('');
-  const [role, setRole] = useState<UserRole>('student');
+  const [role, setRole] = useState<PublicRole>('student');
   const [year, setYear] = useState(1);
   const [section, setSection] = useState('A');
+  const [registerNumber, setRegisterNumber] = useState('');
+  const [rollNumber, setRollNumber] = useState('');
+  const [facultyId, setFacultyId] = useState('');
+  const [department, setDepartment] = useState('');
   const [busy, setBusy] = useState(false);
   const { toast } = useToast();
   const { user, signIn, signUp, logout } = useAuth();
@@ -32,12 +37,20 @@ const Login = () => {
             <h1 className="font-display text-3xl font-bold text-foreground">Welcome, {user.name}</h1>
             <p className="text-sm text-muted-foreground mt-2 capitalize">Role: {user.role}</p>
             {user.role === 'student' && (
-              <p className="text-sm text-muted-foreground">Year {user.year} · Section {user.section}</p>
+              <p className="text-sm text-muted-foreground">Year {user.year} · Section {user.section} · {user.department}</p>
+            )}
+            {user.role === 'teacher' && (
+              <p className="text-sm text-muted-foreground">Faculty ID: {user.faculty_id} · {user.department}</p>
             )}
           </div>
-          <button onClick={async () => { await logout(); toast({ title: 'Logged Out' }); }} className="w-full flex items-center justify-center gap-2 bg-secondary text-secondary-foreground py-3 rounded-xl font-medium hover:scale-[1.02] transition-all">
-            <LogOut className="w-4 h-4" /> Sign Out
-          </button>
+          <div className="flex gap-2">
+            {user.role === 'student' && (
+              <Link to="/profile" className="flex-1 text-center bg-primary text-primary-foreground py-3 rounded-xl font-medium hover:scale-[1.02] transition-all">My Profile</Link>
+            )}
+            <button onClick={async () => { await logout(); toast({ title: 'Logged Out' }); }} className="flex-1 flex items-center justify-center gap-2 bg-secondary text-secondary-foreground py-3 rounded-xl font-medium hover:scale-[1.02] transition-all">
+              <LogOut className="w-4 h-4" /> Sign Out
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -53,7 +66,25 @@ const Login = () => {
         toast({ title: 'Login Successful' });
         navigate('/');
       } else {
-        const { error } = await signUp({ email, password, name: name || email.split('@')[0], role, year: role === 'student' ? year : undefined, section: role === 'student' ? section : undefined });
+        if (role === 'student' && (!registerNumber || !rollNumber || !department)) {
+          toast({ title: 'Missing fields', description: 'Register No, Roll No and Department are required.', variant: 'destructive' });
+          return;
+        }
+        if (role === 'teacher' && (!facultyId || !department)) {
+          toast({ title: 'Missing fields', description: 'Faculty ID and Department are required.', variant: 'destructive' });
+          return;
+        }
+        const { error } = await signUp({
+          email, password,
+          name: name || email.split('@')[0],
+          role,
+          year: role === 'student' ? year : undefined,
+          section: role === 'student' ? section : undefined,
+          register_number: role === 'student' ? registerNumber : undefined,
+          roll_number: role === 'student' ? rollNumber : undefined,
+          faculty_id: role === 'teacher' ? facultyId : undefined,
+          department,
+        });
         if (error) { toast({ title: 'Signup failed', description: error, variant: 'destructive' }); return; }
         toast({ title: 'Account Created', description: 'You are now signed in.' });
         navigate('/');
@@ -84,28 +115,58 @@ const Login = () => {
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">Role</label>
                 <div className="flex gap-2">
-                  {(['admin', 'teacher', 'student'] as const).map(r => (
+                  {(['student', 'teacher'] as const).map(r => (
                     <button key={r} type="button" onClick={() => setRole(r)} className={`flex-1 px-3 py-2 rounded-xl text-sm font-medium capitalize transition-all ${role === r ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground hover:bg-muted'}`}>
                       {r}
                     </button>
                   ))}
                 </div>
               </div>
+
               {role === 'student' && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1.5">Year</label>
-                    <select value={year} onChange={e => setYear(Number(e.target.value))} className="w-full px-4 py-3 rounded-xl bg-secondary text-foreground outline-none focus:ring-2 focus:ring-primary">
-                      {YEARS.map(y => <option key={y} value={y}>Year {y}</option>)}
-                    </select>
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-1.5">Register Number</label>
+                      <input type="text" value={registerNumber} onChange={e => setRegisterNumber(e.target.value)} placeholder="REG12345" required className="w-full px-4 py-3 rounded-xl bg-secondary text-foreground outline-none focus:ring-2 focus:ring-primary" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-1.5">Roll Number</label>
+                      <input type="text" value={rollNumber} onChange={e => setRollNumber(e.target.value)} placeholder="23" required className="w-full px-4 py-3 rounded-xl bg-secondary text-foreground outline-none focus:ring-2 focus:ring-primary" />
+                    </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-1.5">Section</label>
-                    <select value={section} onChange={e => setSection(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-secondary text-foreground outline-none focus:ring-2 focus:ring-primary">
-                      {SECTIONS.map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">Department</label>
+                    <input type="text" value={department} onChange={e => setDepartment(e.target.value)} placeholder="Computer Science" required className="w-full px-4 py-3 rounded-xl bg-secondary text-foreground outline-none focus:ring-2 focus:ring-primary" />
                   </div>
-                </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-1.5">Year</label>
+                      <select value={year} onChange={e => setYear(Number(e.target.value))} className="w-full px-4 py-3 rounded-xl bg-secondary text-foreground outline-none focus:ring-2 focus:ring-primary">
+                        {YEARS.map(y => <option key={y} value={y}>Year {y}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-1.5">Section</label>
+                      <select value={section} onChange={e => setSection(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-secondary text-foreground outline-none focus:ring-2 focus:ring-primary">
+                        {SECTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {role === 'teacher' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">Faculty ID</label>
+                    <input type="text" value={facultyId} onChange={e => setFacultyId(e.target.value)} placeholder="FAC001" required className="w-full px-4 py-3 rounded-xl bg-secondary text-foreground outline-none focus:ring-2 focus:ring-primary" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">Department</label>
+                    <input type="text" value={department} onChange={e => setDepartment(e.target.value)} placeholder="Computer Science" required className="w-full px-4 py-3 rounded-xl bg-secondary text-foreground outline-none focus:ring-2 focus:ring-primary" />
+                  </div>
+                </>
               )}
             </>
           )}
