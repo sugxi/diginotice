@@ -15,6 +15,9 @@ import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Tasks from "./pages/Tasks";
 import Analytics from "./pages/Analytics";
+import AdminLogin from "./pages/AdminLogin";
+import AdminUsers from "./pages/AdminUsers";
+import StudentProfile from "./pages/StudentProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +41,9 @@ const App = () => (
                   <Route path="/login" element={<Login />} />
                   <Route path="/tasks" element={<Tasks />} />
                   <Route path="/analytics" element={<Analytics />} />
+                  <Route path="/profile" element={<StudentProfile />} />
+                  <Route path="/admin-login" element={<AdminLogin />} />
+                  <Route path="/admin" element={<AdminUsers />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </StatusProvider>
