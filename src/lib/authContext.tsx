@@ -11,16 +11,35 @@ export interface UserProfile {
   role: UserRole;
   year?: number;
   section?: string;
+  register_number?: string;
+  roll_number?: string;
+  faculty_id?: string;
+  department?: string;
+}
+
+export interface SignUpData {
+  email: string;
+  password: string;
+  name: string;
+  role: 'student' | 'teacher';
+  year?: number;
+  section?: string;
+  register_number?: string;
+  roll_number?: string;
+  faculty_id?: string;
+  department?: string;
 }
 
 interface AuthContextType {
   user: UserProfile | null;
   session: Session | null;
   loading: boolean;
-  signUp: (data: { email: string; password: string; name: string; role: UserRole; year?: number; section?: string; }) => Promise<{ error?: string }>;
+  signUp: (data: SignUpData) => Promise<{ error?: string }>;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   logout: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
   isAdminOrTeacher: boolean;
+  isAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
