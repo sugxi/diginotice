@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Bell, LayoutDashboard, Home, Info, LogIn, ListTodo, Menu, X, LogOut, User, BarChart3 } from 'lucide-react';
+import { Bell, LayoutDashboard, Home, Info, LogIn, ListTodo, Menu, X, LogOut, User, BarChart3, Shield, UserCircle } from 'lucide-react';
 import { useAuth } from '@/lib/authContext';
 import { useNotifications } from '@/lib/notificationContext';
 
 const Navbar = () => {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { user, logout, isAdminOrTeacher } = useAuth();
+  const { user, logout, isAdminOrTeacher, isAdmin } = useAuth();
   const { unread, items, markRead, markAllRead } = useNotifications();
   const [bellOpen, setBellOpen] = useState(false);
 
@@ -17,7 +17,9 @@ const Navbar = () => {
     { to: '/notifications', label: 'Notices', icon: Bell },
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/tasks', label: 'Tasks', icon: ListTodo },
+    ...(user?.role === 'student' ? [{ to: '/profile', label: 'Profile', icon: UserCircle }] : []),
     ...(isAdminOrTeacher ? [{ to: '/analytics', label: 'Analytics', icon: BarChart3 }] : []),
+    ...(isAdmin ? [{ to: '/admin', label: 'Admin', icon: Shield }] : []),
   ];
 
   return (

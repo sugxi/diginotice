@@ -11,22 +11,42 @@ export interface UserProfile {
   role: UserRole;
   year?: number;
   section?: string;
+  register_number?: string;
+  roll_number?: string;
+  faculty_id?: string;
+  department?: string;
+}
+
+export interface SignUpData {
+  email: string;
+  password: string;
+  name: string;
+  role: 'student' | 'teacher';
+  year?: number;
+  section?: string;
+  register_number?: string;
+  roll_number?: string;
+  faculty_id?: string;
+  department?: string;
 }
 
 interface AuthContextType {
   user: UserProfile | null;
   session: Session | null;
   loading: boolean;
-  signUp: (data: { email: string; password: string; name: string; role: UserRole; year?: number; section?: string; }) => Promise<{ error?: string }>;
+  signUp: (data: SignUpData) => Promise<{ error?: string }>;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   logout: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
   isAdminOrTeacher: boolean;
+  isAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null, session: null, loading: true,
   signUp: async () => ({}), signIn: async () => ({}), logout: async () => {},
-  isAdminOrTeacher: false,
+  refreshProfile: async () => {},
+  isAdminOrTeacher: false, isAdmin: false,
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -37,7 +57,8 @@ async function loadProfile(authUser: User): Promise<UserProfile | null> {
     supabase.from('user_roles').select('role').eq('user_id', authUser.id),
   ]);
   if (!profile) return null;
-  const role = (roles?.[0]?.role as UserRole) ?? 'student';
+  const roleSet = new Set((roles ?? []).map((r: any) => r.role as UserRole));
+  const role: UserRole = roleSet.has('admin') ? 'admin' : roleSet.has('teacher') ? 'teacher' : 'student';
   return {
     id: profile.id,
     name: profile.name,
@@ -45,6 +66,10 @@ async function loadProfile(authUser: User): Promise<UserProfile | null> {
     role,
     year: profile.year ?? undefined,
     section: profile.section ?? undefined,
+    register_number: (profile as any).register_number ?? undefined,
+    roll_number: (profile as any).roll_number ?? undefined,
+    faculty_id: (profile as any).faculty_id ?? undefined,
+    department: (profile as any).department ?? undefined,
   };
 }
 
@@ -54,20 +79,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess) => {
       setSession(sess);
       if (sess?.user) {
-        // defer profile fetch to avoid deadlocks
-        setTimeout(() => {
-          loadProfile(sess.user).then(p => setUser(p));
-        }, 0);
+        setTimeout(() => { loadProfile(sess.user).then(p => setUser(p)); }, 0);
       } else {
         setUser(null);
       }
     });
 
-    // THEN check existing session
     supabase.auth.getSession().then(({ data: { session: sess } }) => {
       setSession(sess);
       if (sess?.user) {
@@ -80,12 +100,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp: AuthContextType['signUp'] = async ({ email, password, name, role, year, section }) => {
+  const refreshProfile = async () => {
+    if (!session?.user) return;
+    const p = await loadProfile(session.user);
+    setUser(p);
+  };
+
+  const signUp: AuthContextType['signUp'] = async (d) => {
     const { error } = await supabase.auth.signUp({
-      email, password,
+      email: d.email, password: d.password,
       options: {
         emailRedirectTo: `${window.location.origin}/`,
-        data: { name, role, year: year?.toString() ?? '', section: section ?? '' },
+        data: {
+          name: d.name,
+          role: d.role,
+          year: d.year?.toString() ?? '',
+          section: d.section ?? '',
+          register_number: d.register_number ?? '',
+          roll_number: d.roll_number ?? '',
+          faculty_id: d.faculty_id ?? '',
+          department: d.department ?? '',
+        },
       },
     });
     if (error) return { error: error.message };
@@ -98,14 +133,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return {};
   };
 
-  const logout = async () => {
-    await supabase.auth.signOut();
-  };
+  const logout = async () => { await supabase.auth.signOut(); };
 
-  const isAdminOrTeacher = user?.role === 'admin' || user?.role === 'teacher';
+  const isAdmin = user?.role === 'admin';
+  const isAdminOrTeacher = isAdmin || user?.role === 'teacher';
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, logout, isAdminOrTeacher }}>
+    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, logout, refreshProfile, isAdminOrTeacher, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );
