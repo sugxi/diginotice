@@ -195,6 +195,15 @@ const Login = () => {
             {isLogin ? 'Sign Up' : 'Sign In'}
           </button>
         </p>
+
+        <div className="mt-6 pt-6 border-t border-border/50">
+          <Link
+            to="/admin-login"
+            className="w-full flex items-center justify-center gap-2 bg-secondary text-secondary-foreground py-3 rounded-xl font-medium hover:bg-muted transition-all"
+          >
+            <Shield className="w-4 h-4" /> Admin Login
+          </Link>
+        </div>
       </div>
     </div>
   );
