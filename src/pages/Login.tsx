@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, EyeOff, LogIn, UserPlus, LogOut, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, LogIn, UserPlus, LogOut, Loader2, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/authContext';
 import { Link, useNavigate } from 'react-router-dom';
