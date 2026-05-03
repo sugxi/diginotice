@@ -67,14 +67,45 @@ const Notifications = () => {
       );
     }
     if (filterUrgency !== 'all') items = items.filter(n => n.urgency === filterUrgency);
+    if (filterType !== 'all') items = items.filter(n => n.notice_type === filterType);
     const order: Record<Urgency, number> = { urgent: 0, important: 1, normal: 2, low: 3, expired: 4 };
     return [...items].sort((a, b) => order[a.urgency] - order[b.urgency]);
-  }, [notices, search, filterUrgency]);
+  }, [notices, search, filterUrgency, filterType]);
 
   const urgencies: (Urgency | 'all')[] = ['all', 'urgent', 'important', 'normal', 'low'];
 
   const toggleYear = (y: number) => setVisYears(p => p.includes(y) ? p.filter(v => v !== y) : [...p, y]);
   const toggleSection = (s: string) => setVisSections(p => p.includes(s) ? p.filter(v => v !== s) : [...p, s]);
+
+  const handleAttachmentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    const allowed = files.filter(f => f.type.startsWith('image/') || f.type === 'application/pdf');
+    if (allowed.length !== files.length) {
+      toast({ title: 'Some files skipped', description: 'Only images and PDFs are allowed', variant: 'destructive' });
+    }
+    setUploading(true);
+    const uploaded: NoticeAttachment[] = [];
+    for (const f of allowed) {
+      if (f.size > 10 * 1024 * 1024) {
+        toast({ title: 'File too large', description: `${f.name} exceeds 10MB`, variant: 'destructive' });
+        continue;
+      }
+      const path = `${user?.id}/${Date.now()}-${f.name}`;
+      const { error: upErr } = await supabase.storage.from('notice-attachments').upload(path, f, { upsert: true, cacheControl: '3600' });
+      if (upErr) {
+        toast({ title: 'Upload failed', description: upErr.message, variant: 'destructive' });
+        continue;
+      }
+      const { data: { publicUrl } } = supabase.storage.from('notice-attachments').getPublicUrl(path);
+      uploaded.push({ url: publicUrl, name: f.name, type: f.type, size: f.size });
+    }
+    setAttachments(prev => [...prev, ...uploaded]);
+    setUploading(false);
+    if (fileRef.current) fileRef.current.value = '';
+  };
+
+  const removeAttachment = (idx: number) => setAttachments(prev => prev.filter((_, i) => i !== idx));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,9 +118,10 @@ const Notifications = () => {
       visibility: visType,
       target_years: visType === 'targeted' ? visYears : [],
       target_sections: visType === 'targeted' ? visSections : [],
+      attachments,
     };
     const { error } = editingId
-      ? await updateNotice(editingId, payload)
+      ? await updateNotice(editingId, payload as any)
       : await addNotice(payload as any);
     if (error) { toast({ title: 'Error', description: error, variant: 'destructive' }); return; }
     toast({ title: editingId ? 'Notice Updated' : 'Notice Published', description: newTitle });
