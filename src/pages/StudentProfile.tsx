@@ -79,67 +79,72 @@ const StudentProfile = () => {
           <AvatarPicker />
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          {statCards.map((c, i) => (
-            <div key={i} className="glass-card text-center">
-              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${c.color} flex items-center justify-center mx-auto mb-2`}>
-                <c.icon className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <p className="text-2xl font-bold text-foreground">{c.value}</p>
-              <p className="text-xs text-muted-foreground mt-1">{c.label}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Progress bar */}
-        <div className="glass-card mb-6">
-          <div className="flex justify-between text-sm mb-2">
-            <span className="text-foreground font-medium">Overall Progress</span>
-            <span className="text-muted-foreground">{stats.completed} / {total} tasks</span>
-          </div>
-          <div className="h-3 bg-secondary rounded-full overflow-hidden">
-            <div className="h-full bg-low transition-all" style={{ width: `${completionPct}%` }} />
-          </div>
-        </div>
-
-        {/* Task management module */}
-        <div className="glass-strong p-6">
-          <h2 className="font-display text-xl font-semibold text-foreground mb-4">My Tasks</h2>
-          {tasks.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">No tasks assigned yet. <Link to="/notifications" className="text-primary hover:underline">View notices</Link></p>
-          ) : (
-            <div className="space-y-3">
-              {tasks.map(({ notice, status }) => (
-                <div key={notice.id} className="glass rounded-xl p-4">
-                  <div className="flex items-start justify-between gap-3 flex-wrap">
-                    <div className="flex-1 min-w-0">
-                      <p className={`font-medium text-foreground ${status === 'completed' ? 'line-through opacity-60' : ''} ${status === 'missed' ? 'line-through opacity-50 text-destructive' : ''}`}>{notice.title}</p>
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{notice.content}</p>
-                      <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
-                        <span>Due: {new Date(notice.deadline).toLocaleString()}</span>
-                        <span className={`px-2 py-0.5 rounded-md ${getUrgencyBadge(notice.urgency)}`}>{getUrgencyLabel(notice.urgency)}</span>
-                        <span>{daysUntil(notice.deadline) < 0 ? 'Expired' : `${daysUntil(notice.deadline)}d left`}</span>
-                      </div>
-                    </div>
+        {isStudent && (
+          <>
+            {/* Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              {statCards.map((c, i) => (
+                <div key={i} className="glass-card text-center">
+                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${c.color} flex items-center justify-center mx-auto mb-2`}>
+                    <c.icon className="w-5 h-5 text-primary-foreground" />
                   </div>
-                  <div className="flex gap-1.5 mt-3 flex-wrap">
-                    {(['pending', 'in-progress', 'completed', 'missed'] as const).map(s => (
-                      <button key={s} onClick={() => setStatus(notice.id, s)} className={`px-2.5 py-1 rounded-lg text-[11px] font-medium capitalize transition-all ${
-                        status === s
-                          ? s === 'completed' ? 'bg-low/30 text-low'
-                            : s === 'missed' ? 'bg-destructive/30 text-destructive'
-                            : s === 'in-progress' ? 'bg-important/30 text-important'
-                            : 'bg-urgent/30 text-urgent'
-                          : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
-                      }`}>{s}</button>
-                    ))}
-                  </div>
+                  <p className="text-2xl font-bold text-foreground">{c.value}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{c.label}</p>
                 </div>
               ))}
             </div>
-          )}
-        </div>
+
+            {/* Progress bar */}
+            <div className="glass-card mb-6">
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-foreground font-medium">Overall Progress</span>
+                <span className="text-muted-foreground">{stats.completed} / {total} tasks</span>
+              </div>
+              <div className="h-3 bg-secondary rounded-full overflow-hidden">
+                <div className="h-full bg-low transition-all" style={{ width: `${completionPct}%` }} />
+              </div>
+            </div>
+
+            {/* Task management module */}
+            <div className="glass-strong p-6">
+              <h2 className="font-display text-xl font-semibold text-foreground mb-4">My Tasks</h2>
+              {tasks.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">No tasks assigned yet. <Link to="/notifications" className="text-primary hover:underline">View notices</Link></p>
+              ) : (
+                <div className="space-y-3">
+                  {tasks.map(({ notice, status }) => (
+                    <div key={notice.id} className="glass rounded-xl p-4">
+                      <div className="flex items-start justify-between gap-3 flex-wrap">
+                        <div className="flex-1 min-w-0">
+                          <p className={`font-medium text-foreground ${status === 'completed' ? 'line-through opacity-60' : ''} ${status === 'missed' ? 'line-through opacity-50 text-destructive' : ''}`}>{notice.title}</p>
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{notice.content}</p>
+                          <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
+                            <span>Due: {new Date(notice.deadline).toLocaleString()}</span>
+                            <span className={`px-2 py-0.5 rounded-md ${getUrgencyBadge(notice.urgency)}`}>{getUrgencyLabel(notice.urgency)}</span>
+                            <span>{daysUntil(notice.deadline) < 0 ? 'Expired' : `${daysUntil(notice.deadline)}d left`}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-1.5 mt-3 flex-wrap">
+                        {(['assigned', 'pending', 'in-progress', 'completed', 'missed'] as const).map(s => (
+                          <button key={s} onClick={() => setStatus(notice.id, s)} className={`px-2.5 py-1 rounded-lg text-[11px] font-medium capitalize transition-all ${
+                            status === s
+                              ? s === 'completed' ? 'bg-low/30 text-low'
+                                : s === 'missed' ? 'bg-destructive/30 text-destructive'
+                                : s === 'in-progress' ? 'bg-important/30 text-important'
+                                : s === 'pending' ? 'bg-urgent/30 text-urgent'
+                                : 'bg-primary/30 text-primary'
+                              : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
+                          }`}>{s}</button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
