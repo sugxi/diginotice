@@ -7,8 +7,6 @@ const corsHeaders = {
 
 const DEMO_ADMIN_EMAIL = 'demo.admin@smartnotice.local';
 const DEMO_ADMIN_PASSWORD = 'DemoAdmin@123';
-const DEMO_ADMIN_ID = '00000000-0000-4000-8000-000000000001';
-
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') {
@@ -25,25 +23,21 @@ Deno.serve(async (req) => {
   });
 
   try {
-    const { data: existingProfile } = await admin
-      .from('profiles')
-      .select('id')
-      .eq('email', DEMO_ADMIN_EMAIL)
-      .maybeSingle();
+    const { data: usersPage, error: listError } = await admin.auth.admin.listUsers();
+    if (listError) throw listError;
 
-    let userId = existingProfile?.id as string | undefined;
+    let userId = usersPage.users.find((user) => user.email === DEMO_ADMIN_EMAIL)?.id;
 
     if (!userId) {
       const { data: created, error: createError } = await admin.auth.admin.createUser({
-        id: DEMO_ADMIN_ID,
         email: DEMO_ADMIN_EMAIL,
         password: DEMO_ADMIN_PASSWORD,
         email_confirm: true,
         user_metadata: { name: 'Demo Administrator', role: 'student' },
       });
 
-      if (createError && !createError.message.toLowerCase().includes('already')) throw createError;
-      userId = created.user?.id ?? DEMO_ADMIN_ID;
+      if (createError) throw createError;
+      userId = created.user?.id;
     } else {
       const { error: updateError } = await admin.auth.admin.updateUserById(userId, {
         password: DEMO_ADMIN_PASSWORD,
@@ -59,7 +53,17 @@ Deno.serve(async (req) => {
       department: 'CSE',
     });
 
-    await admin.from('user_roles').upsert({ user_id: userId, role: 'admin' }, { onConflict: 'user_id,role' });
+    const { data: existingRole } = await admin
+      .from('user_roles')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('role', 'admin')
+      .maybeSingle();
+
+    if (!existingRole) {
+      const { error: roleError } = await admin.from('user_roles').insert({ user_id: userId, role: 'admin' });
+      if (roleError) throw roleError;
+    }
 
     return new Response(JSON.stringify({ email: DEMO_ADMIN_EMAIL, password: DEMO_ADMIN_PASSWORD }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
