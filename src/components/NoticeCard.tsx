@@ -20,14 +20,17 @@ const NoticeCard = ({ notice, onClick }: NoticeCardProps) => {
 
   return (
     <div onClick={onClick} className={`glass-card cursor-pointer ${getUrgencyColorClass(u)} transition-all duration-300`}>
-      <div className="flex items-start justify-between mb-3">
-        <h3 className="font-display text-lg font-semibold text-foreground leading-tight flex-1 mr-3">
+      <div className="flex items-start justify-between mb-3 gap-2">
+        <h3 className="font-display text-lg font-semibold text-foreground leading-tight flex-1">
           {notice.title}
         </h3>
         <span className={`shrink-0 text-xs font-semibold px-3 py-1 rounded-full ${getUrgencyBadge(u)}`}>
           {getUrgencyLabel(u)}
         </span>
       </div>
+      <span className={`inline-block text-[10px] uppercase tracking-wider px-2 py-0.5 rounded mb-3 ${notice.notice_type === 'task' ? 'bg-primary/20 text-primary' : 'bg-secondary text-secondary-foreground'}`}>
+        {notice.notice_type === 'task' ? 'Task' : 'Info'}
+      </span>
 
       <p className="text-sm text-muted-foreground mb-4 line-clamp-3">{cleanedText}</p>
 
