@@ -56,6 +56,7 @@ export type Database = {
           created_at: string
           deadline: string
           id: string
+          notice_type: Database["public"]["Enums"]["notice_type"]
           target_sections: string[] | null
           target_years: number[] | null
           title: string
@@ -71,6 +72,7 @@ export type Database = {
           created_at?: string
           deadline: string
           id?: string
+          notice_type?: Database["public"]["Enums"]["notice_type"]
           target_sections?: string[] | null
           target_years?: number[] | null
           title: string
@@ -86,6 +88,7 @@ export type Database = {
           created_at?: string
           deadline?: string
           id?: string
+          notice_type?: Database["public"]["Enums"]["notice_type"]
           target_sections?: string[] | null
           target_years?: number[] | null
           title?: string
@@ -137,6 +140,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
           created_at: string
           department: string | null
           email: string
@@ -149,6 +153,7 @@ export type Database = {
           year: number | null
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string
           department?: string | null
           email: string
@@ -161,6 +166,7 @@ export type Database = {
           year?: number | null
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string
           department?: string | null
           email?: string
@@ -213,6 +219,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "teacher" | "student"
+      notice_type: "task" | "info"
       notice_visibility: "general" | "faculty" | "targeted"
       task_status: "pending" | "in-progress" | "completed" | "missed"
       urgency_level: "low" | "normal" | "important" | "urgent" | "expired"
@@ -344,6 +351,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "teacher", "student"],
+      notice_type: ["task", "info"],
       notice_visibility: ["general", "faculty", "targeted"],
       task_status: ["pending", "in-progress", "completed", "missed"],
       urgency_level: ["low", "normal", "important", "urgent", "expired"],
