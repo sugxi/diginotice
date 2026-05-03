@@ -225,6 +225,28 @@ const Notifications = () => {
                 </div>
               )}
             </div>
+            <div>
+              <label className="text-sm text-muted-foreground mb-2 block">Attachments (Images / PDFs)</label>
+              <input ref={fileRef} type="file" accept="image/*,application/pdf" multiple className="hidden" onChange={handleAttachmentUpload} />
+              <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}
+                className="glass px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 disabled:opacity-60">
+                {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
+                {uploading ? 'Uploading...' : 'Attach Files'}
+              </button>
+              {attachments.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {attachments.map((a, idx) => (
+                    <div key={idx} className="flex items-center gap-2 glass p-2 rounded-lg">
+                      <FileText className="w-4 h-4 text-primary shrink-0" />
+                      <span className="text-xs text-foreground flex-1 truncate">{a.name}</span>
+                      <button type="button" onClick={() => removeAttachment(idx)} className="text-muted-foreground hover:text-destructive">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <button type="submit" className="gradient-primary text-primary-foreground px-6 py-2 rounded-xl font-medium hover:scale-105 transition-all">
               {editingId ? 'Save Changes' : 'Publish Notice'}
             </button>
