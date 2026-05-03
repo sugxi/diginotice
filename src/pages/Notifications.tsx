@@ -26,13 +26,14 @@ const Notifications = () => {
   const [newCategory, setNewCategory] = useState('General');
   const [newDeadline, setNewDeadline] = useState('');
   const [newBaseUrgency, setNewBaseUrgency] = useState<Urgency>('normal');
+  const [newNoticeType, setNewNoticeType] = useState<'task' | 'info'>('info');
   const [visType, setVisType] = useState<'general' | 'faculty' | 'targeted'>('general');
   const [visYears, setVisYears] = useState<number[]>([]);
   const [visSections, setVisSections] = useState<string[]>([]);
 
   const resetForm = () => {
     setNewTitle(''); setNewContent(''); setNewCategory('General'); setNewDeadline('');
-    setNewBaseUrgency('normal'); setVisType('general'); setVisYears([]); setVisSections([]);
+    setNewBaseUrgency('normal'); setNewNoticeType('info'); setVisType('general'); setVisYears([]); setVisSections([]);
     setEditingId(null);
   };
 
@@ -41,6 +42,7 @@ const Notifications = () => {
     setNewTitle(n.title); setNewContent(n.content); setNewCategory(n.category);
     setNewDeadline(n.deadline.slice(0, 16));
     setNewBaseUrgency(n.base_urgency);
+    setNewNoticeType(n.notice_type);
     setVisType(n.visibility);
     setVisYears(n.target_years || []);
     setVisSections(n.target_sections || []);
@@ -75,6 +77,7 @@ const Notifications = () => {
       title: newTitle, content: newContent, category: newCategory,
       deadline: new Date(newDeadline).toISOString(),
       base_urgency: newBaseUrgency,
+      notice_type: newNoticeType,
       visibility: visType,
       target_years: visType === 'targeted' ? visYears : [],
       target_sections: visType === 'targeted' ? visSections : [],
