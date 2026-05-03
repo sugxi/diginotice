@@ -4,6 +4,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/authContext';
 import { Link, useNavigate } from 'react-router-dom';
 
+import { DEPARTMENTS } from '@/lib/avatars';
+
 const YEARS = [1, 2, 3, 4];
 const SECTIONS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 type PublicRole = 'student' | 'teacher';
@@ -137,7 +139,10 @@ const Login = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">Department</label>
-                    <input type="text" value={department} onChange={e => setDepartment(e.target.value)} placeholder="Computer Science" required className="w-full px-4 py-3 rounded-xl bg-secondary text-foreground outline-none focus:ring-2 focus:ring-primary" />
+                    <select value={department} onChange={e => setDepartment(e.target.value)} required className="w-full px-4 py-3 rounded-xl bg-secondary text-foreground outline-none focus:ring-2 focus:ring-primary">
+                      <option value="">Select department</option>
+                      {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -164,7 +169,10 @@ const Login = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1.5">Department</label>
-                    <input type="text" value={department} onChange={e => setDepartment(e.target.value)} placeholder="Computer Science" required className="w-full px-4 py-3 rounded-xl bg-secondary text-foreground outline-none focus:ring-2 focus:ring-primary" />
+                    <select value={department} onChange={e => setDepartment(e.target.value)} required className="w-full px-4 py-3 rounded-xl bg-secondary text-foreground outline-none focus:ring-2 focus:ring-primary">
+                      <option value="">Select department</option>
+                      {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
                   </div>
                 </>
               )}
