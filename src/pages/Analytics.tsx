@@ -118,8 +118,13 @@ const Analytics = () => {
                 {rows.map(r => {
                   const pct = r.total ? Math.round((r.completed / r.total) * 100) : 0;
                   return (
-                    <tr key={r.noticeId} className="border-b border-border/50">
-                      <td className="py-3 pr-3 text-foreground font-medium max-w-xs truncate">{r.title}</td>
+                    <tr key={r.noticeId} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
+                      <td className="py-3 pr-3 text-foreground font-medium max-w-xs">
+                        <Link to={`/analytics/notice/${r.noticeId}`} className="flex items-center gap-1.5 hover:text-primary transition-colors">
+                          <span className="truncate">{r.title}</span>
+                          <ChevronRight className="w-3.5 h-3.5 shrink-0 opacity-60" />
+                        </Link>
+                      </td>
                       <td className="py-3 pr-3"><span className={`text-[10px] px-2 py-0.5 rounded ${getUrgencyBadge(r.urgency)}`}>{getUrgencyLabel(r.urgency)}</span></td>
                       <td className="py-3 pr-3 text-center">{r.total}</td>
                       <td className="py-3 pr-3 text-center text-low">{r.completed}</td>
