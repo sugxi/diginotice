@@ -14,9 +14,9 @@ const Dashboard = () => {
   const stats = useMemo(() => {
     const counts: Record<Urgency, number> = { urgent: 0, important: 0, normal: 0, low: 0, expired: 0 };
     notices.forEach(n => { counts[n.urgency]++; });
-    const taskStatusCounts = { pending: 0, 'in-progress': 0, completed: 0, missed: 0 };
-    notices.forEach(n => {
-      const s = statuses[n.id] ?? (n.urgency === 'expired' ? 'missed' : 'pending');
+    const taskStatusCounts = { assigned: 0, pending: 0, 'in-progress': 0, completed: 0, missed: 0 };
+    notices.filter(n => n.notice_type === 'task').forEach(n => {
+      const s = statuses[n.id] ?? (n.urgency === 'expired' ? 'missed' : 'assigned');
       taskStatusCounts[s as keyof typeof taskStatusCounts]++;
     });
     return { counts, taskStatusCounts, totalNotices: notices.length };
@@ -85,7 +85,7 @@ const Dashboard = () => {
               <Clock className="w-5 h-5 text-primary" /> My Task Progress
             </h2>
             <div className="space-y-3">
-              {(['pending', 'in-progress', 'completed', 'missed'] as const).map(s => {
+              {(['assigned', 'pending', 'in-progress', 'completed', 'missed'] as const).map(s => {
                 const count = stats.taskStatusCounts[s];
                 const pct = stats.totalNotices ? (count / stats.totalNotices) * 100 : 0;
                 return (
@@ -95,7 +95,7 @@ const Dashboard = () => {
                       <span className="text-muted-foreground">{count}</span>
                     </div>
                     <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full ${s === 'completed' ? 'bg-low' : s === 'in-progress' ? 'bg-important' : s === 'missed' ? 'bg-destructive' : 'bg-urgent'}`} style={{ width: `${pct}%` }} />
+                      <div className={`h-full rounded-full ${s === 'completed' ? 'bg-low' : s === 'in-progress' ? 'bg-important' : s === 'missed' ? 'bg-destructive' : s === 'pending' ? 'bg-urgent' : 'bg-primary'}`} style={{ width: `${pct}%` }} />
                     </div>
                   </div>
                 );
