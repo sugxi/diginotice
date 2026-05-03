@@ -67,11 +67,11 @@ const Navbar = () => {
                     ))}
                   </div>
                 )}
-                <Link to="/profile" className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground select-none" aria-label="Account info">
                   <UserAvatar url={user.avatar_url} name={user.name} className="w-7 h-7" />
                   <span className="hidden lg:inline">{user.name}</span>
                   <span className="hidden lg:inline bg-secondary px-1.5 py-0.5 rounded capitalize">{user.role}</span>
-                </Link>
+                </div>
                 <button onClick={logout} aria-label="Sign Out" className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-all">
                   <LogOut className="w-4 h-4" /> Sign Out
                 </button>
