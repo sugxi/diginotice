@@ -26,13 +26,14 @@ const Notifications = () => {
   const [newCategory, setNewCategory] = useState('General');
   const [newDeadline, setNewDeadline] = useState('');
   const [newBaseUrgency, setNewBaseUrgency] = useState<Urgency>('normal');
+  const [newNoticeType, setNewNoticeType] = useState<'task' | 'info'>('info');
   const [visType, setVisType] = useState<'general' | 'faculty' | 'targeted'>('general');
   const [visYears, setVisYears] = useState<number[]>([]);
   const [visSections, setVisSections] = useState<string[]>([]);
 
   const resetForm = () => {
     setNewTitle(''); setNewContent(''); setNewCategory('General'); setNewDeadline('');
-    setNewBaseUrgency('normal'); setVisType('general'); setVisYears([]); setVisSections([]);
+    setNewBaseUrgency('normal'); setNewNoticeType('info'); setVisType('general'); setVisYears([]); setVisSections([]);
     setEditingId(null);
   };
 
@@ -41,6 +42,7 @@ const Notifications = () => {
     setNewTitle(n.title); setNewContent(n.content); setNewCategory(n.category);
     setNewDeadline(n.deadline.slice(0, 16));
     setNewBaseUrgency(n.base_urgency);
+    setNewNoticeType(n.notice_type);
     setVisType(n.visibility);
     setVisYears(n.target_years || []);
     setVisSections(n.target_sections || []);
@@ -75,6 +77,7 @@ const Notifications = () => {
       title: newTitle, content: newContent, category: newCategory,
       deadline: new Date(newDeadline).toISOString(),
       base_urgency: newBaseUrgency,
+      notice_type: newNoticeType,
       visibility: visType,
       target_years: visType === 'targeted' ? visYears : [],
       target_sections: visType === 'targeted' ? visSections : [],
@@ -138,6 +141,17 @@ const Notifications = () => {
                   </button>
                 ))}
               </div>
+            </div>
+            <div>
+              <label className="text-sm text-muted-foreground mb-2 block">Notice Type</label>
+              <div className="flex gap-2 flex-wrap">
+                {([['info', 'Informational'], ['task', 'Task-Based']] as const).map(([val, label]) => (
+                  <button key={val} type="button" onClick={() => setNewNoticeType(val)} className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${newNoticeType === val ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground hover:bg-muted'}`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1">Task-based notices support student status tracking and analytics.</p>
             </div>
             <div>
               <label className="text-sm text-muted-foreground mb-2 block">Who can see this notice?</label>

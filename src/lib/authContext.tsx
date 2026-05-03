@@ -15,6 +15,7 @@ export interface UserProfile {
   roll_number?: string;
   faculty_id?: string;
   department?: string;
+  avatar_url?: string;
 }
 
 export interface SignUpData {
@@ -70,6 +71,7 @@ async function loadProfile(authUser: User): Promise<UserProfile | null> {
     roll_number: (profile as any).roll_number ?? undefined,
     faculty_id: (profile as any).faculty_id ?? undefined,
     department: (profile as any).department ?? undefined,
+    avatar_url: (profile as any).avatar_url ?? undefined,
   };
 }
 

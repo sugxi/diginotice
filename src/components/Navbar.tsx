@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Bell, LayoutDashboard, Home, Info, LogIn, ListTodo, Menu, X, LogOut, User, BarChart3, Shield, UserCircle } from 'lucide-react';
+import { Bell, LayoutDashboard, Home, Info, LogIn, ListTodo, Menu, X, LogOut, BarChart3, Shield, UserCircle } from 'lucide-react';
 import { useAuth } from '@/lib/authContext';
 import { useNotifications } from '@/lib/notificationContext';
+import UserAvatar from '@/components/UserAvatar';
 
 const Navbar = () => {
   const location = useLocation();
@@ -17,7 +18,7 @@ const Navbar = () => {
     { to: '/notifications', label: 'Notices', icon: Bell },
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/tasks', label: 'Tasks', icon: ListTodo },
-    ...(user?.role === 'student' ? [{ to: '/profile', label: 'Profile', icon: UserCircle }] : []),
+    ...(user ? [{ to: '/profile', label: 'Profile', icon: UserCircle }] : []),
     ...(isAdminOrTeacher ? [{ to: '/analytics', label: 'Analytics', icon: BarChart3 }] : []),
     ...(isAdmin ? [{ to: '/admin', label: 'Admin', icon: Shield }] : []),
   ];
@@ -66,10 +67,11 @@ const Navbar = () => {
                     ))}
                   </div>
                 )}
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <User className="w-3 h-3" />{user.name}
-                  <span className="bg-secondary px-1.5 py-0.5 rounded capitalize">{user.role}</span>
-                </span>
+                <Link to="/profile" className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  <UserAvatar url={user.avatar_url} name={user.name} className="w-7 h-7" />
+                  <span className="hidden lg:inline">{user.name}</span>
+                  <span className="hidden lg:inline bg-secondary px-1.5 py-0.5 rounded capitalize">{user.role}</span>
+                </Link>
                 <button onClick={logout} className="flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-all">
                   <LogOut className="w-4 h-4" />
                 </button>
