@@ -221,7 +221,12 @@ export type Database = {
       app_role: "admin" | "teacher" | "student"
       notice_type: "task" | "info"
       notice_visibility: "general" | "faculty" | "targeted"
-      task_status: "pending" | "in-progress" | "completed" | "missed"
+      task_status:
+        | "pending"
+        | "in-progress"
+        | "completed"
+        | "missed"
+        | "assigned"
       urgency_level: "low" | "normal" | "important" | "urgent" | "expired"
     }
     CompositeTypes: {
@@ -353,7 +358,13 @@ export const Constants = {
       app_role: ["admin", "teacher", "student"],
       notice_type: ["task", "info"],
       notice_visibility: ["general", "faculty", "targeted"],
-      task_status: ["pending", "in-progress", "completed", "missed"],
+      task_status: [
+        "pending",
+        "in-progress",
+        "completed",
+        "missed",
+        "assigned",
+      ],
       urgency_level: ["low", "normal", "important", "urgent", "expired"],
     },
   },
