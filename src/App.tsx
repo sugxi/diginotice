@@ -15,6 +15,7 @@ import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Tasks from "./pages/Tasks";
 import Analytics from "./pages/Analytics";
+import NoticeDetail from "./pages/NoticeDetail";
 import AdminLogin from "./pages/AdminLogin";
 import AdminUsers from "./pages/AdminUsers";
 import StudentProfile from "./pages/StudentProfile";
@@ -41,6 +42,7 @@ const App = () => (
                   <Route path="/login" element={<Login />} />
                   <Route path="/tasks" element={<Tasks />} />
                   <Route path="/analytics" element={<Analytics />} />
+                  <Route path="/analytics/notice/:id" element={<NoticeDetail />} />
                   <Route path="/profile" element={<StudentProfile />} />
                   <Route path="/admin-login" element={<AdminLogin />} />
                   <Route path="/admin" element={<AdminUsers />} />
