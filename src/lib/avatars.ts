@@ -1,18 +1,15 @@
-// Flat illustrated people avatars - friendly, colorful, suitable for students/teachers.
-// Uses DiceBear "personas" style which produces clean flat-illustration characters
-// similar to common avatar packs (rounded shoulders, simple faces, bright shirts).
+// Flat illustrated people avatars sourced from the user-provided reference set.
+import m1 from '@/assets/avatars/m1.png';
+import m2 from '@/assets/avatars/m2.png';
+import m3 from '@/assets/avatars/m3.png';
+import m4 from '@/assets/avatars/m4.png';
+import f1 from '@/assets/avatars/f1.png';
+import f2 from '@/assets/avatars/f2.png';
+import f3 from '@/assets/avatars/f3.png';
+import f4 from '@/assets/avatars/f4.png';
+import f5 from '@/assets/avatars/f5.png';
 
-const persona = (seed: string) =>
-  `https://api.dicebear.com/7.x/personas/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf,c4f1be&backgroundType=solid`;
-
-const SHARED = [
-  persona('Arjun'),
-  persona('Rohan'),
-  persona('Vikram'),
-  persona('Ananya'),
-  persona('Priya'),
-  persona('Meera'),
-];
+const SHARED = [m1, m2, m3, m4, f1, f2, f3, f4, f5];
 
 export const DEFAULT_AVATARS = {
   student: SHARED,
