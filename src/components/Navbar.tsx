@@ -18,7 +18,6 @@ const Navbar = () => {
     { to: '/notifications', label: 'Notices', icon: Bell },
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/tasks', label: 'Tasks', icon: ListTodo },
-    ...(user ? [{ to: '/profile', label: 'Profile', icon: UserCircle }] : []),
     ...(isAdminOrTeacher ? [{ to: '/analytics', label: 'Analytics', icon: BarChart3 }] : []),
     ...(isAdmin ? [{ to: '/admin', label: 'Admin', icon: Shield }] : []),
   ];
@@ -43,6 +42,12 @@ const Navbar = () => {
                 </Link>
               );
             })}
+            {user && (
+              <Link to="/profile" className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${location.pathname === '/profile' ? 'bg-primary text-primary-foreground shadow-lg' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'}`}>
+                <UserAvatar url={user.avatar_url} name={user.name} className="w-5 h-5" />
+                Profile
+              </Link>
+            )}
             {user ? (
               <div className="flex items-center gap-2 ml-2 relative">
                 {/* Bell with unread */}
@@ -67,11 +72,6 @@ const Navbar = () => {
                     ))}
                   </div>
                 )}
-                <div className="flex items-center gap-2 text-xs text-muted-foreground select-none" aria-label="Account info">
-                  <UserAvatar url={user.avatar_url} name={user.name} className="w-7 h-7" />
-                  <span className="hidden lg:inline">{user.name}</span>
-                  <span className="hidden lg:inline bg-secondary px-1.5 py-0.5 rounded capitalize">{user.role}</span>
-                </div>
                 <button onClick={logout} aria-label="Sign Out" className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-all">
                   <LogOut className="w-4 h-4" /> Sign Out
                 </button>
