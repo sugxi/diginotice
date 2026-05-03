@@ -114,7 +114,7 @@ export const NoticeStoreProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateNotice: NoticeStoreContextType['updateNotice'] = async (id, data) => {
-    const { error } = await supabase.from('notices').update({ ...data, updated_at: new Date().toISOString() }).eq('id', id);
+    const { error } = await supabase.from('notices').update({ ...data, updated_at: new Date().toISOString() } as any).eq('id', id);
     if (error) return { error: error.message };
     refresh();
     return {};
