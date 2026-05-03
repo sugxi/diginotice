@@ -31,16 +31,7 @@ const AdminLogin = () => {
     return true;
   };
 
-  const handleDemoAdmin = async () => {
-    setBusy(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('demo-admin-login', { method: 'POST' });
-      if (error) { toast({ title: 'Demo login failed', description: error.message, variant: 'destructive' }); return; }
-      await signInAdmin(data.email, data.password);
-    } finally {
-      setBusy(false);
-    }
-  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
