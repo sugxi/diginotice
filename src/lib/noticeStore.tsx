@@ -3,6 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/authContext';
 import { computeUrgency, Urgency } from '@/lib/urgency';
 
+export interface NoticeAttachment {
+  url: string;
+  name: string;
+  type: string; // mime type
+  size?: number;
+}
+
 export interface ManagedNotice {
   id: string;
   title: string;
