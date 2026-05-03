@@ -54,8 +54,8 @@ const AvatarPicker = () => {
         <div className="flex flex-wrap gap-3">
           {defaults.map(url => (
             <button key={url} type="button" disabled={busy} onClick={() => setAvatar(url)}
-              className={`relative rounded-full overflow-hidden ring-2 transition-all ${user.avatar_url === url ? 'ring-primary scale-105' : 'ring-transparent hover:ring-primary/50'}`}>
-              <img src={url} alt="avatar option" className="w-14 h-14 bg-secondary" />
+              className={`relative w-14 h-14 rounded-full overflow-hidden ring-2 transition-all flex items-center justify-center bg-secondary ${user.avatar_url === url ? 'ring-primary scale-105' : 'ring-transparent hover:ring-primary/50'}`}>
+              <img src={url} alt="avatar option" className="w-full h-full object-cover object-center" />
               {user.avatar_url === url && (
                 <div className="absolute inset-0 bg-primary/30 flex items-center justify-center">
                   <Check className="w-5 h-5 text-primary-foreground" />
