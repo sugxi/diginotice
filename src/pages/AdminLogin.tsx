@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Shield, Loader2, Eye, EyeOff, Sparkles } from 'lucide-react';
+import { Shield, Loader2, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/authContext';
 import { Navigate, useNavigate } from 'react-router-dom';
@@ -31,16 +31,7 @@ const AdminLogin = () => {
     return true;
   };
 
-  const handleDemoAdmin = async () => {
-    setBusy(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('demo-admin-login', { method: 'POST' });
-      if (error) { toast({ title: 'Demo login failed', description: error.message, variant: 'destructive' }); return; }
-      await signInAdmin(data.email, data.password);
-    } finally {
-      setBusy(false);
-    }
-  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,17 +72,6 @@ const AdminLogin = () => {
           </button>
         </form>
 
-        <div className="mt-6 pt-6 border-t border-border/50">
-          <button
-            type="button"
-            onClick={handleDemoAdmin}
-            disabled={busy}
-            className="w-full bg-secondary text-secondary-foreground py-3 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-muted transition-all disabled:opacity-60"
-          >
-            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-            Demo Admin Access
-          </button>
-        </div>
       </div>
     </div>
   );
