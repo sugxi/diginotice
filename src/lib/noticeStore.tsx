@@ -107,7 +107,7 @@ export const NoticeStoreProvider = ({ children }: { children: ReactNode }) => {
       ...data,
       author_id: user.id,
       author_name: user.name,
-    });
+    } as any);
     if (error) return { error: error.message };
     refresh();
     return {};
