@@ -12,14 +12,17 @@ const YEARS = [1, 2, 3, 4];
 const SECTIONS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
 const Notifications = () => {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [filterUrgency, setFilterUrgency] = useState<Urgency | 'all'>('all');
-  const [selectedNotice, setSelectedNotice] = useState<string | null>(null);
+  const [filterType, setFilterType] = useState<'all' | 'task' | 'info'>('all');
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const { user, isAdminOrTeacher } = useAuth();
   const { notices, addNotice, updateNotice, removeNotice } = useNoticeStore();
   const { toast } = useToast();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
 
   // Form state
   const [newTitle, setNewTitle] = useState('');
@@ -31,10 +34,12 @@ const Notifications = () => {
   const [visType, setVisType] = useState<'general' | 'faculty' | 'targeted'>('general');
   const [visYears, setVisYears] = useState<number[]>([]);
   const [visSections, setVisSections] = useState<string[]>([]);
+  const [attachments, setAttachments] = useState<NoticeAttachment[]>([]);
 
   const resetForm = () => {
     setNewTitle(''); setNewContent(''); setNewCategory('General'); setNewDeadline('');
     setNewBaseUrgency('normal'); setNewNoticeType('info'); setVisType('general'); setVisYears([]); setVisSections([]);
+    setAttachments([]);
     setEditingId(null);
   };
 
