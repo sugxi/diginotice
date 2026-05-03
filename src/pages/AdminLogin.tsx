@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Shield, Loader2, Eye, EyeOff, Sparkles } from 'lucide-react';
+import { Shield, Loader2, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/authContext';
 import { Navigate, useNavigate } from 'react-router-dom';
@@ -81,17 +81,6 @@ const AdminLogin = () => {
           </button>
         </form>
 
-        <div className="mt-6 pt-6 border-t border-border/50">
-          <button
-            type="button"
-            onClick={handleDemoAdmin}
-            disabled={busy}
-            className="w-full bg-secondary text-secondary-foreground py-3 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-muted transition-all disabled:opacity-60"
-          >
-            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-            Demo Admin Access
-          </button>
-        </div>
       </div>
     </div>
   );
