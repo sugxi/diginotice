@@ -52,8 +52,8 @@ const Notifications = () => {
     setVisType(n.visibility);
     setVisYears(n.target_years || []);
     setVisSections(n.target_sections || []);
+    setAttachments(n.attachments || []);
     setShowAdd(true);
-    setSelectedNotice(null);
   };
 
   const filtered = useMemo(() => {
