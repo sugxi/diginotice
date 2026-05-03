@@ -52,6 +52,7 @@ function enrich(rows: any[]): ManagedNotice[] {
     target_years: r.target_years ?? [],
     target_sections: r.target_sections ?? [],
     notice_type: r.notice_type ?? 'info',
+    attachments: Array.isArray(r.attachments) ? r.attachments : [],
     urgency: computeUrgency(r.deadline),
   }));
 }
