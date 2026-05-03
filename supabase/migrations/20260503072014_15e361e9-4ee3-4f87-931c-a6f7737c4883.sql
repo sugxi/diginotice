@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Users can insert their own role on signup" ON public.user_roles;
