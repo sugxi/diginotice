@@ -14,6 +14,7 @@ export interface ManagedNotice {
   notice_type: 'task' | 'info';
   target_years: number[];
   target_sections: string[];
+  attachments: NoticeAttachment[];
   author_id: string | null;
   author_name: string;
   created_at: string;
