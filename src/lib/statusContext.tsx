@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/authContext';
 
-export type StudentStatus = 'pending' | 'in-progress' | 'completed' | 'missed';
+export type StudentStatus = 'assigned' | 'pending' | 'in-progress' | 'completed' | 'missed';
 
 interface StatusContextType {
   statuses: Record<string, StudentStatus>; // notice_id -> status

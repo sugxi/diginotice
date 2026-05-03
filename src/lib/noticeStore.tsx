@@ -11,6 +11,7 @@ export interface ManagedNotice {
   deadline: string;          // ISO timestamp
   base_urgency: Urgency;
   visibility: 'general' | 'faculty' | 'targeted';
+  notice_type: 'task' | 'info';
   target_years: number[];
   target_sections: string[];
   author_id: string | null;
@@ -42,6 +43,7 @@ function enrich(rows: any[]): ManagedNotice[] {
     ...r,
     target_years: r.target_years ?? [],
     target_sections: r.target_sections ?? [],
+    notice_type: r.notice_type ?? 'info',
     urgency: computeUrgency(r.deadline),
   }));
 }
