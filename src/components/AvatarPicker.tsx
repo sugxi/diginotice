@@ -51,11 +51,11 @@ const AvatarPicker = () => {
 
       <div className="mb-6">
         <p className="text-sm text-muted-foreground mb-2">Choose a default avatar</p>
-        <div className="flex flex-wrap items-center justify-start gap-3">
+        <div className="flex flex-wrap items-center justify-center gap-3">
           {defaults.map(url => (
             <button key={url} type="button" disabled={busy} onClick={() => setAvatar(url)}
-              className={`relative w-14 h-14 rounded-full overflow-hidden ring-2 transition-all flex items-center justify-center bg-secondary ${user.avatar_url === url ? 'ring-primary scale-105' : 'ring-transparent hover:ring-primary/50'}`}>
-              <img src={url} alt="avatar option" className="w-full h-full object-cover object-center" />
+              className={`relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-secondary p-0 ring-2 transition-colors ${user.avatar_url === url ? 'ring-primary' : 'ring-transparent hover:ring-primary/50'}`}>
+              <img src={url} alt="avatar option" className="block h-full w-full object-cover object-center" />
               {user.avatar_url === url && (
                 <div className="absolute inset-0 bg-primary/30 flex items-center justify-center">
                   <Check className="w-5 h-5 text-primary-foreground" />
