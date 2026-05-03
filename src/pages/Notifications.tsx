@@ -143,6 +143,17 @@ const Notifications = () => {
               </div>
             </div>
             <div>
+              <label className="text-sm text-muted-foreground mb-2 block">Notice Type</label>
+              <div className="flex gap-2 flex-wrap">
+                {([['info', 'Informational'], ['task', 'Task-Based']] as const).map(([val, label]) => (
+                  <button key={val} type="button" onClick={() => setNewNoticeType(val)} className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${newNoticeType === val ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground hover:bg-muted'}`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1">Task-based notices support student status tracking and analytics.</p>
+            </div>
+            <div>
               <label className="text-sm text-muted-foreground mb-2 block">Who can see this notice?</label>
               <div className="flex gap-2 mb-3 flex-wrap">
                 {([['general', 'Everyone'], ['faculty', 'Faculty Only'], ['targeted', 'Specific Year/Section']] as const).map(([val, label]) => (
