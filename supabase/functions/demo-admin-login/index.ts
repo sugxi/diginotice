@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 const DEMO_ADMIN_EMAIL = 'demo.admin@smartnotice.local';
-const DEMO_ADMIN_PASSWORD = 'DemoAdmin@123';
+const DEMO_ADMIN_PASSWORD = 'Lx9$qP2vR7!nZk4Wm8Tj#bH3';
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') {
