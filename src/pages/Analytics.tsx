@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/lib/authContext';
 import { useNoticeStore } from '@/lib/noticeStore';
 import { supabase } from '@/integrations/supabase/client';
-import { BarChart3, Users, CheckCircle, Clock, AlertCircle, XCircle } from 'lucide-react';
-import { Navigate } from 'react-router-dom';
+import { BarChart3, Users, CheckCircle, Clock, AlertCircle, XCircle, ChevronRight } from 'lucide-react';
+import { Navigate, Link } from 'react-router-dom';
 import { Urgency, getUrgencyBadge, getUrgencyLabel } from '@/lib/urgency';
 
 interface ProgressRow {
