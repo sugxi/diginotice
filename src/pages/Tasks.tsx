@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { CheckCircle, Clock, PlayCircle, XCircle, Filter } from 'lucide-react';
+import { CheckCircle, Clock, PlayCircle, XCircle, Filter, Inbox } from 'lucide-react';
 import { useAuth } from '@/lib/authContext';
 import { useNoticeStore } from '@/lib/noticeStore';
 import { useStatuses, StudentStatus } from '@/lib/statusContext';
@@ -13,11 +13,13 @@ const Tasks = () => {
   const [filter, setFilter] = useState<'all' | StudentStatus>('all');
 
   const myTasks = useMemo(() => {
-    // notices visible to user become tasks; for staff this shows all notices as overview
-    const items = notices.map(n => ({
-      notice: n,
-      status: statuses[n.id] ?? (n.urgency === 'expired' ? 'missed' as StudentStatus : 'pending' as StudentStatus),
-    }));
+    // only task-type notices appear as tasks
+    const items = notices
+      .filter(n => n.notice_type === 'task')
+      .map(n => ({
+        notice: n,
+        status: statuses[n.id] ?? (n.urgency === 'expired' ? 'missed' as StudentStatus : 'assigned' as StudentStatus),
+      }));
     const order: Record<Urgency, number> = { urgent: 0, important: 1, normal: 2, low: 3, expired: 4 };
     return items.sort((a, b) => order[a.notice.urgency] - order[b.notice.urgency]);
   }, [notices, statuses]);
@@ -37,6 +39,7 @@ const Tasks = () => {
   }
 
   const statusIcons: Record<StudentStatus, JSX.Element> = {
+    assigned: <Inbox className="w-4 h-4 text-primary" />,
     pending: <Clock className="w-4 h-4 text-urgent" />,
     'in-progress': <PlayCircle className="w-4 h-4 text-important" />,
     completed: <CheckCircle className="w-4 h-4 text-low" />,
@@ -55,7 +58,7 @@ const Tasks = () => {
 
         <div className="flex gap-2 mb-6 flex-wrap items-center">
           <Filter className="w-4 h-4 text-muted-foreground" />
-          {(['all', 'pending', 'in-progress', 'completed', 'missed'] as const).map(f => (
+          {(['all', 'assigned', 'pending', 'in-progress', 'completed', 'missed'] as const).map(f => (
             <button key={f} onClick={() => setFilter(f)} className={`px-4 py-2 rounded-xl text-sm font-medium capitalize transition-all ${filter === f ? 'bg-primary text-primary-foreground shadow' : 'glass text-muted-foreground hover:text-foreground'}`}>{f}</button>
           ))}
         </div>
@@ -74,13 +77,14 @@ const Tasks = () => {
                 </div>
                 {user.role === 'student' && (
                   <div className="flex gap-1.5 mt-3 flex-wrap">
-                    {(['pending', 'in-progress', 'completed', 'missed'] as const).map(s => (
+                    {(['assigned', 'pending', 'in-progress', 'completed', 'missed'] as const).map(s => (
                       <button key={s} onClick={() => setStatus(notice.id, s)} className={`px-2.5 py-1 rounded-lg text-[11px] font-medium capitalize transition-all ${
                         status === s
                           ? s === 'completed' ? 'bg-low/30 text-low'
                             : s === 'missed' ? 'bg-destructive/30 text-destructive'
                             : s === 'in-progress' ? 'bg-important/30 text-important'
-                            : 'bg-urgent/30 text-urgent'
+                            : s === 'pending' ? 'bg-urgent/30 text-urgent'
+                            : 'bg-primary/30 text-primary'
                           : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
                       }`}>{s}</button>
                     ))}
