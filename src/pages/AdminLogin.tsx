@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Shield, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Shield, Loader2, Eye, EyeOff, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/authContext';
 import { Navigate, useNavigate } from 'react-router-dom';
@@ -16,22 +16,37 @@ const AdminLogin = () => {
 
   if (user && isAdmin) return <Navigate to="/admin" replace />;
 
+  const signInAdmin = async (adminEmail: string, adminPassword: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({ email: adminEmail, password: adminPassword });
+    if (error) { toast({ title: 'Login failed', description: error.message, variant: 'destructive' }); return false; }
+    const { data: roles } = await supabase.from('user_roles').select('role').eq('user_id', data.user!.id);
+    const adminOk = (roles ?? []).some((r: any) => r.role === 'admin');
+    if (!adminOk) {
+      await supabase.auth.signOut();
+      toast({ title: 'Access denied', description: 'This account is not an administrator.', variant: 'destructive' });
+      return false;
+    }
+    toast({ title: 'Welcome, Administrator' });
+    navigate('/admin');
+    return true;
+  };
+
+  const handleDemoAdmin = async () => {
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('demo-admin-login', { method: 'POST' });
+      if (error) { toast({ title: 'Demo login failed', description: error.message, variant: 'destructive' }); return; }
+      await signInAdmin(data.email, data.password);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) { toast({ title: 'Login failed', description: error.message, variant: 'destructive' }); return; }
-      // Verify role is admin
-      const { data: roles } = await supabase.from('user_roles').select('role').eq('user_id', data.user!.id);
-      const adminOk = (roles ?? []).some((r: any) => r.role === 'admin');
-      if (!adminOk) {
-        await supabase.auth.signOut();
-        toast({ title: 'Access denied', description: 'This account is not an administrator.', variant: 'destructive' });
-        return;
-      }
-      toast({ title: 'Welcome, Administrator' });
-      navigate('/admin');
+      await signInAdmin(email, password);
     } finally {
       setBusy(false);
     }
@@ -65,6 +80,18 @@ const AdminLogin = () => {
             {busy && <Loader2 className="w-4 h-4 animate-spin" />} Sign In as Admin
           </button>
         </form>
+
+        <div className="mt-6 pt-6 border-t border-border/50">
+          <button
+            type="button"
+            onClick={handleDemoAdmin}
+            disabled={busy}
+            className="w-full bg-secondary text-secondary-foreground py-3 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-muted transition-all disabled:opacity-60"
+          >
+            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            Demo Admin Access
+          </button>
+        </div>
       </div>
     </div>
   );
