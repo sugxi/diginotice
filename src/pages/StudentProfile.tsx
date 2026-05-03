@@ -4,7 +4,9 @@ import { useAuth } from '@/lib/authContext';
 import { useNoticeStore } from '@/lib/noticeStore';
 import { useStatuses, StudentStatus } from '@/lib/statusContext';
 import { getUrgencyBadge, getUrgencyLabel, daysUntil } from '@/lib/urgency';
-import { User, CheckCircle, Clock, PlayCircle, XCircle, Award, Hash, Building2, GraduationCap } from 'lucide-react';
+import { CheckCircle, Clock, PlayCircle, XCircle, Award, Hash, Building2, GraduationCap } from 'lucide-react';
+import UserAvatar from '@/components/UserAvatar';
+import AvatarPicker from '@/components/AvatarPicker';
 
 const StudentProfile = () => {
   const { user, loading } = useAuth();
@@ -12,21 +14,23 @@ const StudentProfile = () => {
   const { statuses, setStatus } = useStatuses();
 
   const tasks = useMemo(() => {
-    return notices.map(n => ({
-      notice: n,
-      status: (statuses[n.id] ?? (n.urgency === 'expired' ? 'missed' : 'pending')) as StudentStatus,
-    }));
+    return notices
+      .filter(n => n.notice_type === 'task')
+      .map(n => ({
+        notice: n,
+        status: (statuses[n.id] ?? (n.urgency === 'expired' ? 'missed' : 'assigned')) as StudentStatus,
+      }));
   }, [notices, statuses]);
 
   const stats = useMemo(() => {
-    const c = { pending: 0, 'in-progress': 0, completed: 0, missed: 0 };
+    const c: Record<StudentStatus, number> = { assigned: 0, pending: 0, 'in-progress': 0, completed: 0, missed: 0 };
     tasks.forEach(t => { c[t.status]++; });
     return c;
   }, [tasks]);
 
   if (loading) return <div className="min-h-screen pt-32 text-center text-muted-foreground">Loading…</div>;
   if (!user) return <Navigate to="/login" replace />;
-  if (user.role !== 'student') return <Navigate to="/" replace />;
+  const isStudent = user.role === 'student';
 
   const total = tasks.length;
   const completionPct = total ? Math.round((stats.completed / total) * 100) : 0;
@@ -44,22 +48,35 @@ const StudentProfile = () => {
         {/* Profile header */}
         <div className="glass-strong p-6 md:p-8 mb-6">
           <div className="flex flex-col md:flex-row gap-6 items-start">
-            <div className="w-24 h-24 rounded-2xl gradient-primary flex items-center justify-center shrink-0">
-              <User className="w-12 h-12 text-primary-foreground" />
-            </div>
+            <UserAvatar url={user.avatar_url} name={user.name} className="w-24 h-24 rounded-2xl" />
             <div className="flex-1 min-w-0">
               <h1 className="font-display text-3xl font-bold text-foreground">{user.name}</h1>
               <p className="text-sm text-muted-foreground mt-1">{user.email}</p>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
-                <Detail icon={Hash} label="Register No" value={user.register_number || '—'} />
-                <Detail icon={Hash} label="Roll No" value={user.roll_number || '—'} />
-                <Detail icon={Building2} label="Department" value={user.department || '—'} />
-                <Detail icon={GraduationCap} label="Year" value={user.year ? `Year ${user.year}` : '—'} />
-                <Detail icon={GraduationCap} label="Section" value={user.section || '—'} />
-                <Detail icon={Award} label="Completion" value={`${completionPct}%`} />
+                {isStudent ? (
+                  <>
+                    <Detail icon={Hash} label="Register No" value={user.register_number || '—'} />
+                    <Detail icon={Hash} label="Roll No" value={user.roll_number || '—'} />
+                    <Detail icon={Building2} label="Department" value={user.department || '—'} />
+                    <Detail icon={GraduationCap} label="Year" value={user.year ? `Year ${user.year}` : '—'} />
+                    <Detail icon={GraduationCap} label="Section" value={user.section || '—'} />
+                    <Detail icon={Award} label="Completion" value={`${completionPct}%`} />
+                  </>
+                ) : (
+                  <>
+                    <Detail icon={Hash} label="Faculty ID" value={user.faculty_id || '—'} />
+                    <Detail icon={Building2} label="Department" value={user.department || '—'} />
+                    <Detail icon={Award} label="Role" value={user.role} />
+                  </>
+                )}
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Avatar picker */}
+        <div className="mb-6">
+          <AvatarPicker />
         </div>
 
         {/* Stats */}
