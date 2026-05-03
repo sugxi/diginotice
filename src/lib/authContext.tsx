@@ -57,9 +57,25 @@ async function loadProfile(authUser: User): Promise<UserProfile | null> {
     supabase.from('profiles').select('*').eq('id', authUser.id).maybeSingle(),
     supabase.from('user_roles').select('role').eq('user_id', authUser.id),
   ]);
-  if (!profile) return null;
+  const meta = authUser.user_metadata ?? {};
   const roleSet = new Set((roles ?? []).map((r: any) => r.role as UserRole));
-  const role: UserRole = roleSet.has('admin') ? 'admin' : roleSet.has('teacher') ? 'teacher' : 'student';
+  const metadataRole: UserRole = meta.role === 'teacher' ? 'teacher' : 'student';
+  const role: UserRole = roleSet.has('admin') ? 'admin' : roleSet.has('teacher') ? 'teacher' : metadataRole;
+  if (!profile) {
+    const yearValue = Number(meta.year);
+    return {
+      id: authUser.id,
+      name: meta.name ?? authUser.email?.split('@')[0] ?? 'User',
+      email: authUser.email ?? meta.email ?? '',
+      role,
+      year: Number.isFinite(yearValue) ? yearValue : undefined,
+      section: meta.section || undefined,
+      register_number: meta.register_number || undefined,
+      roll_number: meta.roll_number || undefined,
+      faculty_id: meta.faculty_id || undefined,
+      department: meta.department || undefined,
+    };
+  }
   return {
     id: profile.id,
     name: profile.name,
