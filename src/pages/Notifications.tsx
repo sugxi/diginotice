@@ -1,11 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import NoticeCard from '@/components/NoticeCard';
-import { Search, Filter, Plus, Trash2, X, Pencil } from 'lucide-react';
+import { Search, Filter, Plus, Trash2, Pencil, Paperclip, X, Loader2, FileText } from 'lucide-react';
 import { useAuth } from '@/lib/authContext';
-import { useNoticeStore, ManagedNotice } from '@/lib/noticeStore';
+import { useNoticeStore, ManagedNotice, NoticeAttachment } from '@/lib/noticeStore';
 import { useToast } from '@/hooks/use-toast';
 import { Urgency, getUrgencyLabel, getUrgencyBadge } from '@/lib/urgency';
-import { extractKeywords, cleanText } from '@/lib/nlp';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 const YEARS = [1, 2, 3, 4];
 const SECTIONS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
