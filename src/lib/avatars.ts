@@ -1,23 +1,24 @@
-// Default avatars are deterministic SVG data URIs from DiceBear-style endpoint
-// (uses dicebear.com public API – no auth required). Indexed by role for variety.
+// Clean, minimal, professional default avatars.
+// Uses DiceBear "notionists-neutral" + "lorelei" styles, which produce
+// elegant flat illustrations suitable for student/teacher profiles.
+
+const male = (seed: string) =>
+  `https://api.dicebear.com/7.x/notionists-neutral/svg?seed=${seed}&backgroundColor=c0aede,d1d4f9,b6e3f4&backgroundType=solid`;
+const female = (seed: string) =>
+  `https://api.dicebear.com/7.x/lorelei/svg?seed=${seed}&backgroundColor=c0aede,d1d4f9,ffd5dc&backgroundType=solid&hairColor=variant01,variant02,variant03`;
+
+const SHARED = [
+  male('Arjun'),
+  male('Rohan'),
+  male('Vikram'),
+  female('Ananya'),
+  female('Priya'),
+  female('Meera'),
+];
 
 export const DEFAULT_AVATARS = {
-  student: [
-    'https://api.dicebear.com/7.x/adventurer/svg?seed=Aiden',
-    'https://api.dicebear.com/7.x/adventurer/svg?seed=Bella',
-    'https://api.dicebear.com/7.x/adventurer/svg?seed=Cole',
-    'https://api.dicebear.com/7.x/adventurer/svg?seed=Diya',
-    'https://api.dicebear.com/7.x/adventurer/svg?seed=Eli',
-    'https://api.dicebear.com/7.x/adventurer/svg?seed=Faye',
-  ],
-  teacher: [
-    'https://api.dicebear.com/7.x/avataaars/svg?seed=Mentor',
-    'https://api.dicebear.com/7.x/avataaars/svg?seed=Professor',
-    'https://api.dicebear.com/7.x/avataaars/svg?seed=Scholar',
-    'https://api.dicebear.com/7.x/avataaars/svg?seed=Teacher',
-    'https://api.dicebear.com/7.x/avataaars/svg?seed=Tutor',
-    'https://api.dicebear.com/7.x/avataaars/svg?seed=Lecturer',
-  ],
+  student: SHARED,
+  teacher: SHARED,
 };
 
 export const DEPARTMENTS = ['CSE', 'IT', 'CSBS', 'AIML', 'AIDS', 'ECE', 'EEE', 'MECH', 'CIVIL'] as const;

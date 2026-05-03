@@ -3,6 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/authContext';
 import { computeUrgency, Urgency } from '@/lib/urgency';
 
+export interface NoticeAttachment {
+  url: string;
+  name: string;
+  type: string; // mime type
+  size?: number;
+}
+
 export interface ManagedNotice {
   id: string;
   title: string;
@@ -14,6 +21,7 @@ export interface ManagedNotice {
   notice_type: 'task' | 'info';
   target_years: number[];
   target_sections: string[];
+  attachments: NoticeAttachment[];
   author_id: string | null;
   author_name: string;
   created_at: string;
@@ -44,6 +52,7 @@ function enrich(rows: any[]): ManagedNotice[] {
     target_years: r.target_years ?? [],
     target_sections: r.target_sections ?? [],
     notice_type: r.notice_type ?? 'info',
+    attachments: Array.isArray(r.attachments) ? r.attachments : [],
     urgency: computeUrgency(r.deadline),
   }));
 }
@@ -99,14 +108,14 @@ export const NoticeStoreProvider = ({ children }: { children: ReactNode }) => {
       ...data,
       author_id: user.id,
       author_name: user.name,
-    });
+    } as any);
     if (error) return { error: error.message };
     refresh();
     return {};
   };
 
   const updateNotice: NoticeStoreContextType['updateNotice'] = async (id, data) => {
-    const { error } = await supabase.from('notices').update({ ...data, updated_at: new Date().toISOString() }).eq('id', id);
+    const { error } = await supabase.from('notices').update({ ...data, updated_at: new Date().toISOString() } as any).eq('id', id);
     if (error) return { error: error.message };
     refresh();
     return {};

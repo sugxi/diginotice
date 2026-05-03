@@ -1,24 +1,28 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import NoticeCard from '@/components/NoticeCard';
-import { Search, Filter, Plus, Trash2, X, Pencil } from 'lucide-react';
+import { Search, Filter, Plus, Trash2, Pencil, Paperclip, X, Loader2, FileText } from 'lucide-react';
 import { useAuth } from '@/lib/authContext';
-import { useNoticeStore, ManagedNotice } from '@/lib/noticeStore';
+import { useNoticeStore, ManagedNotice, NoticeAttachment } from '@/lib/noticeStore';
 import { useToast } from '@/hooks/use-toast';
 import { Urgency, getUrgencyLabel, getUrgencyBadge } from '@/lib/urgency';
-import { extractKeywords, cleanText } from '@/lib/nlp';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 const YEARS = [1, 2, 3, 4];
 const SECTIONS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
 const Notifications = () => {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [filterUrgency, setFilterUrgency] = useState<Urgency | 'all'>('all');
-  const [selectedNotice, setSelectedNotice] = useState<string | null>(null);
+  const [filterType, setFilterType] = useState<'all' | 'task' | 'info'>('all');
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const { user, isAdminOrTeacher } = useAuth();
   const { notices, addNotice, updateNotice, removeNotice } = useNoticeStore();
   const { toast } = useToast();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
 
   // Form state
   const [newTitle, setNewTitle] = useState('');
@@ -30,10 +34,12 @@ const Notifications = () => {
   const [visType, setVisType] = useState<'general' | 'faculty' | 'targeted'>('general');
   const [visYears, setVisYears] = useState<number[]>([]);
   const [visSections, setVisSections] = useState<string[]>([]);
+  const [attachments, setAttachments] = useState<NoticeAttachment[]>([]);
 
   const resetForm = () => {
     setNewTitle(''); setNewContent(''); setNewCategory('General'); setNewDeadline('');
     setNewBaseUrgency('normal'); setNewNoticeType('info'); setVisType('general'); setVisYears([]); setVisSections([]);
+    setAttachments([]);
     setEditingId(null);
   };
 
@@ -46,8 +52,8 @@ const Notifications = () => {
     setVisType(n.visibility);
     setVisYears(n.target_years || []);
     setVisSections(n.target_sections || []);
+    setAttachments(n.attachments || []);
     setShowAdd(true);
-    setSelectedNotice(null);
   };
 
   const filtered = useMemo(() => {
@@ -61,14 +67,45 @@ const Notifications = () => {
       );
     }
     if (filterUrgency !== 'all') items = items.filter(n => n.urgency === filterUrgency);
+    if (filterType !== 'all') items = items.filter(n => n.notice_type === filterType);
     const order: Record<Urgency, number> = { urgent: 0, important: 1, normal: 2, low: 3, expired: 4 };
     return [...items].sort((a, b) => order[a.urgency] - order[b.urgency]);
-  }, [notices, search, filterUrgency]);
+  }, [notices, search, filterUrgency, filterType]);
 
   const urgencies: (Urgency | 'all')[] = ['all', 'urgent', 'important', 'normal', 'low'];
 
   const toggleYear = (y: number) => setVisYears(p => p.includes(y) ? p.filter(v => v !== y) : [...p, y]);
   const toggleSection = (s: string) => setVisSections(p => p.includes(s) ? p.filter(v => v !== s) : [...p, s]);
+
+  const handleAttachmentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    const allowed = files.filter(f => f.type.startsWith('image/') || f.type === 'application/pdf');
+    if (allowed.length !== files.length) {
+      toast({ title: 'Some files skipped', description: 'Only images and PDFs are allowed', variant: 'destructive' });
+    }
+    setUploading(true);
+    const uploaded: NoticeAttachment[] = [];
+    for (const f of allowed) {
+      if (f.size > 10 * 1024 * 1024) {
+        toast({ title: 'File too large', description: `${f.name} exceeds 10MB`, variant: 'destructive' });
+        continue;
+      }
+      const path = `${user?.id}/${Date.now()}-${f.name}`;
+      const { error: upErr } = await supabase.storage.from('notice-attachments').upload(path, f, { upsert: true, cacheControl: '3600' });
+      if (upErr) {
+        toast({ title: 'Upload failed', description: upErr.message, variant: 'destructive' });
+        continue;
+      }
+      const { data: { publicUrl } } = supabase.storage.from('notice-attachments').getPublicUrl(path);
+      uploaded.push({ url: publicUrl, name: f.name, type: f.type, size: f.size });
+    }
+    setAttachments(prev => [...prev, ...uploaded]);
+    setUploading(false);
+    if (fileRef.current) fileRef.current.value = '';
+  };
+
+  const removeAttachment = (idx: number) => setAttachments(prev => prev.filter((_, i) => i !== idx));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,9 +118,10 @@ const Notifications = () => {
       visibility: visType,
       target_years: visType === 'targeted' ? visYears : [],
       target_sections: visType === 'targeted' ? visSections : [],
+      attachments,
     };
     const { error } = editingId
-      ? await updateNotice(editingId, payload)
+      ? await updateNotice(editingId, payload as any)
       : await addNotice(payload as any);
     if (error) { toast({ title: 'Error', description: error, variant: 'destructive' }); return; }
     toast({ title: editingId ? 'Notice Updated' : 'Notice Published', description: newTitle });
@@ -187,6 +225,28 @@ const Notifications = () => {
                 </div>
               )}
             </div>
+            <div>
+              <label className="text-sm text-muted-foreground mb-2 block">Attachments (Images / PDFs)</label>
+              <input ref={fileRef} type="file" accept="image/*,application/pdf" multiple className="hidden" onChange={handleAttachmentUpload} />
+              <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}
+                className="glass px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 disabled:opacity-60">
+                {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
+                {uploading ? 'Uploading...' : 'Attach Files'}
+              </button>
+              {attachments.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {attachments.map((a, idx) => (
+                    <div key={idx} className="flex items-center gap-2 glass p-2 rounded-lg">
+                      <FileText className="w-4 h-4 text-primary shrink-0" />
+                      <span className="text-xs text-foreground flex-1 truncate">{a.name}</span>
+                      <button type="button" onClick={() => removeAttachment(idx)} className="text-muted-foreground hover:text-destructive">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <button type="submit" className="gradient-primary text-primary-foreground px-6 py-2 rounded-xl font-medium hover:scale-105 transition-all">
               {editingId ? 'Save Changes' : 'Publish Notice'}
             </button>
@@ -200,6 +260,12 @@ const Notifications = () => {
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <Filter className="w-4 h-4 text-muted-foreground" />
+            {(['all', 'task', 'info'] as const).map(t => (
+              <button key={t} onClick={() => setFilterType(t)} className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all ${filterType === t ? 'bg-primary text-primary-foreground shadow' : 'bg-secondary text-secondary-foreground hover:bg-muted'}`}>
+                {t === 'all' ? 'All Types' : t === 'task' ? 'Task' : 'Info'}
+              </button>
+            ))}
+            <span className="w-px h-5 bg-border mx-1" />
             {urgencies.map(p => (
               <button key={p} onClick={() => setFilterUrgency(p)} className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all ${filterUrgency === p ? 'bg-primary text-primary-foreground shadow' : 'bg-secondary text-secondary-foreground hover:bg-muted'}`}>{p}</button>
             ))}
@@ -209,7 +275,7 @@ const Notifications = () => {
         <div className="grid md:grid-cols-2 gap-6">
           {filtered.map(notice => (
             <div key={notice.id} className="relative group">
-              <NoticeCard notice={notice} onClick={() => setSelectedNotice(notice.id)} />
+              <NoticeCard notice={notice} onClick={() => navigate(`/notice/${notice.id}`)} />
               {isAdminOrTeacher && (
                 <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 flex gap-1 z-10 transition-opacity">
                   <button onClick={(e) => { e.stopPropagation(); startEdit(notice); }} className="bg-primary text-primary-foreground p-1.5 rounded-lg">
@@ -229,33 +295,6 @@ const Notifications = () => {
             <p className="text-muted-foreground">No notices match your search criteria.</p>
           </div>
         )}
-
-        {selectedNotice && (() => {
-          const n = notices.find(x => x.id === selectedNotice);
-          if (!n) return null;
-          const text = n.title + ' ' + n.content;
-          return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-foreground/20 backdrop-blur-sm" onClick={() => setSelectedNotice(null)}>
-              <div className="glass-strong max-w-lg w-full p-8 relative" onClick={e => e.stopPropagation()}>
-                <button onClick={() => setSelectedNotice(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
-                <h2 className="font-display text-2xl font-bold text-foreground mb-4">{n.title}</h2>
-                <p className="text-muted-foreground mb-4">{cleanText(text)}</p>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {extractKeywords(text).slice(0, 6).map(k => (
-                    <span key={k} className="text-xs bg-secondary text-secondary-foreground px-2 py-1 rounded-lg">{k}</span>
-                  ))}
-                </div>
-                <p className="text-xs text-muted-foreground">By {n.author_name} · {n.category}</p>
-                <p className="text-xs text-muted-foreground mt-1">Deadline: {new Date(n.deadline).toLocaleString()}</p>
-                {n.visibility !== 'general' && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Visibility: {n.visibility === 'faculty' ? 'Faculty Only' : `Year ${n.target_years.join(', ') || 'All'} · Section ${n.target_sections.join(', ') || 'All'}`}
-                  </p>
-                )}
-              </div>
-            </div>
-          );
-        })()}
       </div>
     </div>
   );

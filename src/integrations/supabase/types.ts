@@ -48,6 +48,7 @@ export type Database = {
       }
       notices: {
         Row: {
+          attachments: Json
           author_id: string | null
           author_name: string
           base_urgency: Database["public"]["Enums"]["urgency_level"]
@@ -64,6 +65,7 @@ export type Database = {
           visibility: Database["public"]["Enums"]["notice_visibility"]
         }
         Insert: {
+          attachments?: Json
           author_id?: string | null
           author_name: string
           base_urgency?: Database["public"]["Enums"]["urgency_level"]
@@ -80,6 +82,7 @@ export type Database = {
           visibility?: Database["public"]["Enums"]["notice_visibility"]
         }
         Update: {
+          attachments?: Json
           author_id?: string | null
           author_name?: string
           base_urgency?: Database["public"]["Enums"]["urgency_level"]
