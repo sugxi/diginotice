@@ -19,7 +19,7 @@ interface Row {
 }
 
 const AdminUsers = () => {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, session, isAdmin, loading } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
   const [busy, setBusy] = useState(true);
   const [query, setQuery] = useState('');
@@ -71,7 +71,7 @@ const AdminUsers = () => {
     refresh();
   };
 
-  if (loading) return <div className="min-h-screen pt-32 text-center text-muted-foreground">Loading…</div>;
+  if (loading || (session && !user)) return <div className="min-h-screen pt-32 text-center text-muted-foreground">Loading…</div>;
   if (!user) return <Navigate to="/admin-login" replace />;
   if (!isAdmin) return <Navigate to="/" replace />;
 
