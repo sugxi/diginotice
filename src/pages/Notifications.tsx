@@ -238,6 +238,12 @@ const Notifications = () => {
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <Filter className="w-4 h-4 text-muted-foreground" />
+            {(['all', 'task', 'info'] as const).map(t => (
+              <button key={t} onClick={() => setFilterType(t)} className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all ${filterType === t ? 'bg-primary text-primary-foreground shadow' : 'bg-secondary text-secondary-foreground hover:bg-muted'}`}>
+                {t === 'all' ? 'All Types' : t === 'task' ? 'Task' : 'Info'}
+              </button>
+            ))}
+            <span className="w-px h-5 bg-border mx-1" />
             {urgencies.map(p => (
               <button key={p} onClick={() => setFilterUrgency(p)} className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all ${filterUrgency === p ? 'bg-primary text-primary-foreground shadow' : 'bg-secondary text-secondary-foreground hover:bg-muted'}`}>{p}</button>
             ))}
@@ -247,7 +253,7 @@ const Notifications = () => {
         <div className="grid md:grid-cols-2 gap-6">
           {filtered.map(notice => (
             <div key={notice.id} className="relative group">
-              <NoticeCard notice={notice} onClick={() => setSelectedNotice(notice.id)} />
+              <NoticeCard notice={notice} onClick={() => navigate(`/notice/${notice.id}`)} />
               {isAdminOrTeacher && (
                 <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 flex gap-1 z-10 transition-opacity">
                   <button onClick={(e) => { e.stopPropagation(); startEdit(notice); }} className="bg-primary text-primary-foreground p-1.5 rounded-lg">
@@ -267,33 +273,6 @@ const Notifications = () => {
             <p className="text-muted-foreground">No notices match your search criteria.</p>
           </div>
         )}
-
-        {selectedNotice && (() => {
-          const n = notices.find(x => x.id === selectedNotice);
-          if (!n) return null;
-          const text = n.title + ' ' + n.content;
-          return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-foreground/20 backdrop-blur-sm" onClick={() => setSelectedNotice(null)}>
-              <div className="glass-strong max-w-lg w-full p-8 relative" onClick={e => e.stopPropagation()}>
-                <button onClick={() => setSelectedNotice(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
-                <h2 className="font-display text-2xl font-bold text-foreground mb-4">{n.title}</h2>
-                <p className="text-muted-foreground mb-4">{cleanText(text)}</p>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {extractKeywords(text).slice(0, 6).map(k => (
-                    <span key={k} className="text-xs bg-secondary text-secondary-foreground px-2 py-1 rounded-lg">{k}</span>
-                  ))}
-                </div>
-                <p className="text-xs text-muted-foreground">By {n.author_name} · {n.category}</p>
-                <p className="text-xs text-muted-foreground mt-1">Deadline: {new Date(n.deadline).toLocaleString()}</p>
-                {n.visibility !== 'general' && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Visibility: {n.visibility === 'faculty' ? 'Faculty Only' : `Year ${n.target_years.join(', ') || 'All'} · Section ${n.target_sections.join(', ') || 'All'}`}
-                  </p>
-                )}
-              </div>
-            </div>
-          );
-        })()}
       </div>
     </div>
   );
